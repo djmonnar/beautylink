@@ -50,7 +50,7 @@ export default function NewReservationPage() {
       id: `r_${Date.now()}`,
       customerId: `c_${Date.now()}`,
       customerName: form.customerName,
-      customerPhone: masked,
+      customerPhoneMasked: masked,
       designerId: form.designerId,
       designerName: selectedDesigner?.name ?? "",
       serviceId: form.serviceId,
@@ -131,7 +131,7 @@ export default function NewReservationPage() {
                   >
                     <option value="">디자이너 선택</option>
                     {MOCK_DESIGNERS.filter((d) => d.status === "active").map((d) => (
-                      <option key={d.id} value={d.id}>{d.name} {d.role}</option>
+                      <option key={d.id} value={d.id}>{d.name} {d.roleTitle}</option>
                     ))}
                   </select>
                   {errors.designerId && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} />{errors.designerId}</p>}

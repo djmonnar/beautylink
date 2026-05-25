@@ -159,7 +159,7 @@ export default function SecurityPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {["사용자", "역할", "작업", "대상", "IP", "시각"].map(h => (
+                {["사용자", "역할", "작업", "대상", "시각"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
                 ))}
               </tr>
@@ -178,9 +178,10 @@ export default function SecurityPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-700 text-xs">{log.action}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{log.target}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs font-mono">{log.ip}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{log.timestamp}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {log.targetType ? `${log.targetType}${log.targetId ? ` #${log.targetId}` : ""}` : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{log.createdAt}</td>
                 </tr>
               ))}
             </tbody>

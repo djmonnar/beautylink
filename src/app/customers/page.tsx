@@ -20,7 +20,7 @@ function CustomerDetail({ c }: { c: Customer }) {
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${gradeColor(c.grade)}`}>{c.grade}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{c.phone}</span>
+              <span>{c.phoneMasked}</span>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
               {c.tags.map((t) => (
@@ -126,7 +126,7 @@ export default function CustomersPage() {
   const [filter, setFilter] = useState<string>("전체");
 
   const filtered = MOCK_CUSTOMERS.filter((c) => {
-    const matchSearch = c.name.includes(search) || c.phone.includes(search);
+    const matchSearch = c.name.includes(search) || c.phoneMasked.includes(search);
     const matchFilter = filter === "전체" || c.grade === filter;
     return matchSearch && matchFilter;
   });
@@ -201,7 +201,7 @@ export default function CustomersPage() {
                       <span className="font-medium text-gray-900 text-sm">{c.name}</span>
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${gradeColor(c.grade)}`}>{c.grade}</span>
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{c.phone}</p>
+                    <p className="text-xs text-gray-500 truncate">{c.phoneMasked}</p>
                     <p className="text-xs text-gray-400">최근 방문 {c.lastVisitDate || "-"}</p>
                   </div>
                   <button className="text-gray-300 hover:text-gray-600 flex-shrink-0">

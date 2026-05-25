@@ -16,9 +16,9 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db, isConfigured } from "@/lib/firebase";
+import type { UserRole } from "@/types";
 
-// ─── 타입 ───────────────────────────────────────────────────
-export type UserRole = "owner" | "manager" | "designer";
+export type { UserRole };
 
 export interface UserData {
   uid: string;

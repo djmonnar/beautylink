@@ -1,110 +1,54 @@
 // ============================================================
-// Types
+// Re-export canonical types from @/types
 // ============================================================
 
-export type ReservationSource = "naver" | "phone" | "visit" | "kakao";
-export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "noshow" | "completed";
-export type CustomerGrade = "VIP" | "신규" | "재방문" | "휴면";
-export type DesignerStatus = "active" | "off";
-export type MessageType = "reservation_confirm" | "reminder" | "cancel" | "noshow";
-export type PermissionRole = "원장" | "매니저" | "디자이너";
+export type {
+  ReservationSource,
+  ReservationStatus,
+  CustomerGrade,
+  DesignerStatus,
+  MessageType,
+  PermissionRole,
+  UserRole,
+  MessageChannel,
+  Reservation,
+  VisitRecord,
+  Customer,
+  CustomerPrivate,
+  Designer,
+  ServiceMenu,
+  MessageTemplate,
+  MessageLog,
+  NaverDesignerMapping,
+  NaverMenuMapping,
+  NaverSyncLog,
+  NaverIntegrationSettings,
+  AccessLog,
+  Salon,
+} from "@/types";
 
-export interface Reservation {
-  id: string;
-  customerId: string;
-  customerName: string;
-  customerPhone: string;
-  designerId: string;
-  designerName: string;
-  serviceId: string;
-  serviceName: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
-  duration: number; // minutes
-  source: ReservationSource;
-  status: ReservationStatus;
-  note?: string;
-  price: number;
-}
+export {
+  sourceLabel,
+  sourceColor,
+  statusLabel,
+  statusColor,
+  gradeColor,
+  maskPhone,
+  calcEndAt,
+} from "@/types";
 
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string; // masked: 010-****-5678
-  phoneRaw: string; // full number for system use
-  birthYear?: number;
-  gender?: "여성" | "남성";
-  grade: CustomerGrade;
-  preferredDesignerId?: string;
-  preferredDesignerName?: string;
-  hairType?: string;
-  specialNote?: string;
-  tags: string[];
-  visitHistory: VisitRecord[];
-  nextVisitDate?: string;
-  totalVisits: number;
-  totalSpent: number;
-  registeredAt: string;
-  lastVisitDate?: string;
-}
+// ============================================================
+// Imported types (for use in this file)
+// ============================================================
 
-export interface VisitRecord {
-  date: string;
-  serviceName: string;
-  designerName: string;
-  memo: string;
-  price: number;
-}
-
-export interface Designer {
-  id: string;
-  name: string;
-  role: string;
-  status: DesignerStatus;
-  phone: string;
-  profileInitial: string;
-  color: string;
-  services: string[];
-  workDays: number[]; // 0=Sun,1=Mon,...,6=Sat
-  startTime: string;
-  endTime: string;
-  daysOff: string[]; // YYYY-MM-DD
-  todayReservations: number;
-  totalReservations: number;
-  joinedAt: string;
-}
-
-export interface ServiceMenu {
-  id: string;
-  category: "컷" | "펌" | "염색" | "클리닉" | "두피케어" | "기타";
-  name: string;
-  price: number;
-  duration: number; // minutes
-  assignedDesignerIds: string[];
-  active: boolean;
-  naverMenuName?: string; // for naver matching
-}
-
-export interface MessageLog {
-  id: string;
-  type: MessageType;
-  customerName: string;
-  phone: string;
-  content: string;
-  sentAt: string;
-  status: "sent" | "failed" | "pending";
-  channel: "SMS" | "카카오";
-}
-
-export interface AccessLog {
-  id: string;
-  userName: string;
-  role: PermissionRole;
-  action: string;
-  target: string;
-  ip: string;
-  timestamp: string;
-}
+import type {
+  Reservation,
+  Customer,
+  Designer,
+  ServiceMenu,
+  MessageLog,
+  AccessLog,
+} from "@/types";
 
 // ============================================================
 // Mock Data
@@ -114,9 +58,9 @@ export const MOCK_DESIGNERS: Designer[] = [
   {
     id: "d1",
     name: "이수연",
-    role: "대표 디자이너",
+    roleTitle: "대표 디자이너",
     status: "active",
-    phone: "010-1111-2222",
+    phoneMasked: "010-****-2222",
     profileInitial: "이",
     color: "#3b82f6",
     services: ["여성 컷", "남성 컷", "디자인 펌", "볼륨 매직", "전체 염색"],
@@ -131,9 +75,9 @@ export const MOCK_DESIGNERS: Designer[] = [
   {
     id: "d2",
     name: "김세은",
-    role: "디자이너",
+    roleTitle: "디자이너",
     status: "active",
-    phone: "010-2222-3333",
+    phoneMasked: "010-****-3333",
     profileInitial: "김",
     color: "#8b5cf6",
     services: ["여성 컷", "전체 염색", "클리닉 기본", "두피 스케일링"],
@@ -148,9 +92,9 @@ export const MOCK_DESIGNERS: Designer[] = [
   {
     id: "d3",
     name: "박지민",
-    role: "디자이너",
+    roleTitle: "디자이너",
     status: "active",
-    phone: "010-3333-4444",
+    phoneMasked: "010-****-4444",
     profileInitial: "박",
     color: "#10b981",
     services: ["여성 컷", "남성 컷", "볼륨 매직", "클리닉 기본"],
@@ -165,9 +109,9 @@ export const MOCK_DESIGNERS: Designer[] = [
   {
     id: "d4",
     name: "최유정",
-    role: "디자이너",
+    roleTitle: "디자이너",
     status: "off",
-    phone: "010-4444-5555",
+    phoneMasked: "010-****-5555",
     profileInitial: "최",
     color: "#f59e0b",
     services: ["여성 컷", "디자인 펌", "전체 염색", "두피 스케일링"],
@@ -197,10 +141,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c1",
     name: "김지연",
-    phone: "010-****-5678",
-    phoneRaw: "010-1234-5678",
-    birthYear: 1992,
-    gender: "여성",
+    phoneMasked: "010-****-5678",
     grade: "VIP",
     preferredDesignerId: "d1",
     preferredDesignerName: "이수연",
@@ -221,9 +162,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c2",
     name: "이수진",
-    phone: "010-****-9876",
-    phoneRaw: "010-2345-9876",
-    gender: "여성",
+    phoneMasked: "010-****-9876",
     grade: "재방문",
     preferredDesignerId: "d2",
     preferredDesignerName: "김세은",
@@ -243,9 +182,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c3",
     name: "박소연",
-    phone: "010-****-1234",
-    phoneRaw: "010-3456-1234",
-    gender: "여성",
+    phoneMasked: "010-****-1234",
     grade: "신규",
     tags: ["신규"],
     visitHistory: [
@@ -259,9 +196,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c4",
     name: "최유정",
-    phone: "010-****-3456",
-    phoneRaw: "010-5678-3456",
-    gender: "여성",
+    phoneMasked: "010-****-3456",
     grade: "VIP",
     preferredDesignerId: "d1",
     preferredDesignerName: "이수연",
@@ -279,9 +214,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c5",
     name: "정다운",
-    phone: "010-****-7890",
-    phoneRaw: "010-9012-7890",
-    gender: "여성",
+    phoneMasked: "010-****-7890",
     grade: "휴면",
     tags: ["휴면", "장기 미방문"],
     visitHistory: [
@@ -295,9 +228,7 @@ export const MOCK_CUSTOMERS: Customer[] = [
   {
     id: "c6",
     name: "한지은",
-    phone: "010-****-8765",
-    phoneRaw: "010-3456-8765",
-    gender: "여성",
+    phoneMasked: "010-****-8765",
     grade: "신규",
     tags: ["신규"],
     visitHistory: [
@@ -311,32 +242,32 @@ export const MOCK_CUSTOMERS: Customer[] = [
 ];
 
 export const MOCK_RESERVATIONS: Reservation[] = [
-  { id: "r1", customerId: "c1", customerName: "김지연", customerPhone: "010-****-5678", designerId: "d1", designerName: "이수연", serviceId: "s7", serviceName: "클리닉 기본", date: "2025-05-25", time: "10:00", duration: 60, source: "naver", status: "confirmed", price: 60000 },
-  { id: "r2", customerId: "c2", customerName: "이수진", customerPhone: "010-****-9876", designerId: "d2", designerName: "김세은", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-25", time: "11:00", duration: 90, source: "phone", status: "confirmed", price: 80000 },
-  { id: "r3", customerId: "c3", customerName: "박소연", customerPhone: "010-****-1234", designerId: "d3", designerName: "박지민", serviceId: "s1", serviceName: "여성 컷", date: "2025-05-25", time: "13:00", duration: 30, source: "visit", status: "confirmed", price: 30000 },
-  { id: "r4", customerId: "c4", customerName: "최유정", customerPhone: "010-****-3456", designerId: "d1", designerName: "이수연", serviceId: "s4", serviceName: "볼륨 매직", date: "2025-05-25", time: "14:00", duration: 150, source: "naver", status: "confirmed", price: 150000 },
-  { id: "r5", customerId: "c6", customerName: "한지은", customerPhone: "010-****-8765", designerId: "d2", designerName: "김세은", serviceId: "s7", serviceName: "클리닉 기본", date: "2025-05-25", time: "15:00", duration: 60, source: "kakao", status: "pending", price: 60000 },
-  { id: "r6", customerId: "c5", customerName: "정다운", customerPhone: "010-****-7890", designerId: "d3", designerName: "박지민", serviceId: "s3", serviceName: "디자인 펌", date: "2025-05-25", time: "10:00", duration: 120, source: "phone", status: "confirmed", price: 120000 },
-  { id: "r7", customerId: "c1", customerName: "김지연", customerPhone: "010-****-5678", designerId: "d1", designerName: "이수연", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-26", time: "10:00", duration: 90, source: "naver", status: "confirmed", price: 80000 },
-  { id: "r8", customerId: "c2", customerName: "이수진", customerPhone: "010-****-9876", designerId: "d2", designerName: "김세은", serviceId: "s1", serviceName: "여성 컷", date: "2025-05-26", time: "14:00", duration: 30, source: "phone", status: "confirmed", price: 30000 },
-  { id: "r9", customerId: "c3", customerName: "박소연", customerPhone: "010-****-1234", designerId: "d1", designerName: "이수연", serviceId: "s2", serviceName: "남성 컷", date: "2025-05-24", time: "11:00", duration: 30, source: "naver", status: "completed", price: 25000 },
-  { id: "r10", customerId: "c4", customerName: "최유정", customerPhone: "010-****-3456", designerId: "d4", designerName: "최유정 디자이너", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-24", time: "13:00", duration: 90, source: "phone", status: "noshow", price: 80000 },
+  { id: "r1", customerId: "c1", customerName: "김지연", customerPhoneMasked: "010-****-5678", designerId: "d1", designerName: "이수연", serviceId: "s7", serviceName: "클리닉 기본", date: "2025-05-25", time: "10:00", duration: 60, source: "naver", status: "confirmed", price: 60000 },
+  { id: "r2", customerId: "c2", customerName: "이수진", customerPhoneMasked: "010-****-9876", designerId: "d2", designerName: "김세은", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-25", time: "11:00", duration: 90, source: "phone", status: "confirmed", price: 80000 },
+  { id: "r3", customerId: "c3", customerName: "박소연", customerPhoneMasked: "010-****-1234", designerId: "d3", designerName: "박지민", serviceId: "s1", serviceName: "여성 컷", date: "2025-05-25", time: "13:00", duration: 30, source: "visit", status: "confirmed", price: 30000 },
+  { id: "r4", customerId: "c4", customerName: "최유정", customerPhoneMasked: "010-****-3456", designerId: "d1", designerName: "이수연", serviceId: "s4", serviceName: "볼륨 매직", date: "2025-05-25", time: "14:00", duration: 150, source: "naver", status: "confirmed", price: 150000 },
+  { id: "r5", customerId: "c6", customerName: "한지은", customerPhoneMasked: "010-****-8765", designerId: "d2", designerName: "김세은", serviceId: "s7", serviceName: "클리닉 기본", date: "2025-05-25", time: "15:00", duration: 60, source: "kakao", status: "pending", price: 60000 },
+  { id: "r6", customerId: "c5", customerName: "정다운", customerPhoneMasked: "010-****-7890", designerId: "d3", designerName: "박지민", serviceId: "s3", serviceName: "디자인 펌", date: "2025-05-25", time: "10:00", duration: 120, source: "phone", status: "confirmed", price: 120000 },
+  { id: "r7", customerId: "c1", customerName: "김지연", customerPhoneMasked: "010-****-5678", designerId: "d1", designerName: "이수연", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-26", time: "10:00", duration: 90, source: "naver", status: "confirmed", price: 80000 },
+  { id: "r8", customerId: "c2", customerName: "이수진", customerPhoneMasked: "010-****-9876", designerId: "d2", designerName: "김세은", serviceId: "s1", serviceName: "여성 컷", date: "2025-05-26", time: "14:00", duration: 30, source: "phone", status: "confirmed", price: 30000 },
+  { id: "r9", customerId: "c3", customerName: "박소연", customerPhoneMasked: "010-****-1234", designerId: "d1", designerName: "이수연", serviceId: "s2", serviceName: "남성 컷", date: "2025-05-24", time: "11:00", duration: 30, source: "naver", status: "completed", price: 25000 },
+  { id: "r10", customerId: "c4", customerName: "최유정", customerPhoneMasked: "010-****-3456", designerId: "d4", designerName: "최유정 디자이너", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-24", time: "13:00", duration: 90, source: "phone", status: "noshow", price: 80000 },
 ];
 
 export const MOCK_MESSAGE_LOGS: MessageLog[] = [
-  { id: "m1", type: "reservation_confirm", customerName: "김지연", phone: "010-****-5678", content: "예약이 확정되었습니다. 5/25(일) 10:00 이수연 디자이너 클리닉 기본", sentAt: "2025-05-24 14:30", status: "sent", channel: "카카오" },
-  { id: "m2", type: "reminder", customerName: "이수진", phone: "010-****-9876", content: "내일 11:00 예약을 잊지 마세요! 뷰티링크 헤어 강남점", sentAt: "2025-05-24 18:00", status: "sent", channel: "SMS" },
-  { id: "m3", type: "noshow", customerName: "최유정", phone: "010-****-3456", content: "노쇼 처리되었습니다. 재예약 시 별도 안내 드리겠습니다.", sentAt: "2025-05-24 13:30", status: "sent", channel: "SMS" },
-  { id: "m4", type: "cancel", customerName: "정다운", phone: "010-****-7890", content: "예약 취소가 완료되었습니다. 다음에 또 방문해주세요.", sentAt: "2025-05-23 10:15", status: "sent", channel: "카카오" },
-  { id: "m5", type: "reminder", customerName: "박소연", phone: "010-****-1234", content: "내일 13:00 예약을 잊지 마세요! 뷰티링크 헤어 강남점", sentAt: "2025-05-24 18:00", status: "failed", channel: "SMS" },
+  { id: "m1", type: "reservation_confirm", customerName: "김지연", phoneMasked: "010-****-5678", content: "예약이 확정되었습니다. 5/25(일) 10:00 이수연 디자이너 클리닉 기본", createdAt: "2025-05-24 14:30", status: "sent", channel: "카카오" },
+  { id: "m2", type: "reminder", customerName: "이수진", phoneMasked: "010-****-9876", content: "내일 11:00 예약을 잊지 마세요! 뷰티링크 헤어 강남점", createdAt: "2025-05-24 18:00", status: "sent", channel: "SMS" },
+  { id: "m3", type: "noshow", customerName: "최유정", phoneMasked: "010-****-3456", content: "노쇼 처리되었습니다. 재예약 시 별도 안내 드리겠습니다.", createdAt: "2025-05-24 13:30", status: "sent", channel: "SMS" },
+  { id: "m4", type: "cancel", customerName: "정다운", phoneMasked: "010-****-7890", content: "예약 취소가 완료되었습니다. 다음에 또 방문해주세요.", createdAt: "2025-05-23 10:15", status: "sent", channel: "카카오" },
+  { id: "m5", type: "reminder", customerName: "박소연", phoneMasked: "010-****-1234", content: "내일 13:00 예약을 잊지 마세요! 뷰티링크 헤어 강남점", createdAt: "2025-05-24 18:00", status: "failed", channel: "SMS" },
 ];
 
 export const MOCK_ACCESS_LOGS: AccessLog[] = [
-  { id: "al1", userName: "김지연", role: "원장", action: "고객 정보 조회", target: "이수진 고객", ip: "192.168.1.10", timestamp: "2025-05-25 09:42" },
-  { id: "al2", userName: "이수연", role: "디자이너", action: "예약 등록", target: "신규 예약 #r11", ip: "192.168.1.11", timestamp: "2025-05-25 09:15" },
-  { id: "al3", userName: "김세은", role: "디자이너", action: "고객 시술 메모 수정", target: "박소연 고객", ip: "192.168.1.12", timestamp: "2025-05-25 08:55" },
-  { id: "al4", userName: "박지민", role: "디자이너", action: "예약 상태 변경", target: "예약 #r3", ip: "192.168.1.13", timestamp: "2025-05-25 08:30" },
-  { id: "al5", userName: "김지연", role: "원장", action: "직원 권한 수정", target: "박지민 디자이너", ip: "192.168.1.10", timestamp: "2025-05-24 18:00" },
+  { id: "al1", userId: "u1", userName: "김지연", role: "원장", action: "고객 정보 조회", targetType: "customer", targetId: "c2", createdAt: "2025-05-25 09:42" },
+  { id: "al2", userId: "u2", userName: "이수연", role: "디자이너", action: "예약 등록", targetType: "reservation", targetId: "r11", createdAt: "2025-05-25 09:15" },
+  { id: "al3", userId: "u3", userName: "김세은", role: "디자이너", action: "고객 시술 메모 수정", targetType: "customer", targetId: "c3", createdAt: "2025-05-25 08:55" },
+  { id: "al4", userId: "u4", userName: "박지민", role: "디자이너", action: "예약 상태 변경", targetType: "reservation", targetId: "r3", createdAt: "2025-05-25 08:30" },
+  { id: "al5", userId: "u1", userName: "김지연", role: "원장", action: "직원 권한 수정", targetType: "designer", targetId: "d3", createdAt: "2025-05-24 18:00" },
 ];
 
 // Chart data for dashboard
@@ -366,7 +297,10 @@ export const CANCEL_REASON_DATA = [
   { name: "기타", value: 10, color: "#94a3b8" },
 ];
 
-// localStorage helpers
+// ============================================================
+// localStorage helpers (demo mode fallback)
+// ============================================================
+
 const LS_KEYS = {
   reservations: "bl_reservations",
   customers: "bl_customers",
@@ -417,56 +351,4 @@ export function resetDemoData() {
   localStorage.removeItem(LS_KEYS.reservations);
   localStorage.removeItem(LS_KEYS.customers);
   localStorage.removeItem(LS_KEYS.services);
-}
-
-export function sourceLabel(source: ReservationSource) {
-  const map: Record<ReservationSource, string> = {
-    naver: "네이버예약",
-    phone: "전화예약",
-    visit: "방문예약",
-    kakao: "카카오",
-  };
-  return map[source];
-}
-
-export function sourceColor(source: ReservationSource) {
-  const map: Record<ReservationSource, string> = {
-    naver: "bg-emerald-100 text-emerald-700",
-    phone: "bg-blue-100 text-blue-700",
-    visit: "bg-rose-100 text-rose-700",
-    kakao: "bg-purple-100 text-purple-700",
-  };
-  return map[source];
-}
-
-export function statusLabel(status: ReservationStatus) {
-  const map: Record<ReservationStatus, string> = {
-    confirmed: "확정",
-    pending: "대기",
-    cancelled: "취소",
-    noshow: "노쇼",
-    completed: "완료",
-  };
-  return map[status];
-}
-
-export function statusColor(status: ReservationStatus) {
-  const map: Record<ReservationStatus, string> = {
-    confirmed: "bg-blue-100 text-blue-700",
-    pending: "bg-yellow-100 text-yellow-700",
-    cancelled: "bg-gray-100 text-gray-500",
-    noshow: "bg-red-100 text-red-700",
-    completed: "bg-green-100 text-green-700",
-  };
-  return map[status];
-}
-
-export function gradeColor(grade: CustomerGrade) {
-  const map: Record<CustomerGrade, string> = {
-    VIP: "bg-amber-100 text-amber-700",
-    신규: "bg-blue-100 text-blue-700",
-    재방문: "bg-green-100 text-green-700",
-    휴면: "bg-gray-100 text-gray-500",
-  };
-  return map[grade];
 }

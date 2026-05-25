@@ -34,7 +34,7 @@ function ReservationModal({ r, onClose }: { r: Reservation; onClose: () => void 
         <div className="space-y-3 text-sm">
           {[
             { label: "고객명", value: r.customerName },
-            { label: "연락처", value: r.customerPhone },
+            { label: "연락처", value: r.customerPhoneMasked },
             { label: "시술 메뉴", value: r.serviceName },
             { label: "담당 디자이너", value: r.designerName },
             { label: "예약 일시", value: `${r.date} ${r.time}` },
@@ -149,7 +149,7 @@ export default function CalendarPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{d.name}</p>
-                          <p className="text-xs text-gray-400">{d.role}</p>
+                          <p className="text-xs text-gray-400">{d.roleTitle}</p>
                         </div>
                       </div>
                     </div>

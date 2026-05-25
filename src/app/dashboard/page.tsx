@@ -193,7 +193,7 @@ export default function DashboardPage() {
                     <div className="w-full bg-gray-100 rounded-full h-1.5">
                       <div
                         className="h-1.5 rounded-full transition-all"
-                        style={{ width: `${(d.todayReservations / 10) * 100}%`, background: d.color }}
+                        style={{ width: `${((d.todayReservations ?? 0) / 10) * 100}%`, background: d.color }}
                       />
                     </div>
                   </div>

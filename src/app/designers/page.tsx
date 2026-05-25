@@ -10,8 +10,8 @@ const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00
 
 function DesignerModal({ designer, onClose }: { designer: Designer | null; onClose: () => void }) {
   const [form, setForm] = useState(designer ?? {
-    id: "", name: "", role: "디자이너", status: "active" as const,
-    phone: "", profileInitial: "", color: "#3b82f6",
+    id: "", name: "", roleTitle: "디자이너", status: "active" as const,
+    phoneMasked: "", profileInitial: "", color: "#3b82f6",
     services: [], workDays: [1,2,3,4,5], startTime: "09:00",
     endTime: "19:00", daysOff: [], todayReservations: 0,
     totalReservations: 0, joinedAt: "",
@@ -29,7 +29,7 @@ function DesignerModal({ designer, onClose }: { designer: Designer | null; onClo
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">직책</label>
-            <input value={form.role} onChange={e => setForm({...form, role: e.target.value})}
+            <input value={form.roleTitle} onChange={e => setForm({...form, roleTitle: e.target.value})}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -108,7 +108,7 @@ export default function DesignersPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">{d.name}</p>
-                      <p className="text-xs text-gray-500">{d.role}</p>
+                      <p className="text-xs text-gray-500">{d.roleTitle}</p>
                     </div>
                   </div>
                   <button onClick={() => setModalDesigner(d)} className="text-gray-400 hover:text-gray-700">
