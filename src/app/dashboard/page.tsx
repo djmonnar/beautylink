@@ -1,11 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import StatCard from "@/components/ui/StatCard";
 import {
   CalendarDays,
   Users,
-  XCircle,
   AlertTriangle,
   TrendingUp,
   Clock,
@@ -18,18 +18,37 @@ import {
 import {
   HOURLY_CHART_DATA,
   SOURCE_CHART_DATA,
-  MOCK_RESERVATIONS,
-  MOCK_DESIGNERS,
   sourceLabel,
   sourceColor,
   statusLabel,
   statusColor,
   resetDemoData,
 } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { getReservations } from "@/services/reservations";
+import { getDesigners } from "@/services/designers";
+import type { Reservation, Designer } from "@/types";
+
+// 시드 데이터가 담긴 데모 날짜
+const DEMO_DATE = "2025-05-25";
 
 export default function DashboardPage() {
-  const todayRes = MOCK_RESERVATIONS.filter((r) => r.date === "2025-05-25");
-  const todayRevenue = todayRes.filter(r => r.status !== "noshow" && r.status !== "cancelled").reduce((s, r) => s + r.price, 0);
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
+  const [todayRes, setTodayRes] = useState<Reservation[]>([]);
+  const [designers, setDesigners] = useState<Designer[]>([]);
+
+  useEffect(() => {
+    getReservations(salonId, DEMO_DATE).then(setTodayRes);
+    getDesigners(salonId).then(setDesigners);
+  }, [salonId]);
+
+  const todayRevenue = todayRes
+    .filter((r) => r.status !== "noshow" && r.status !== "cancelled")
+    .reduce((s, r) => s + r.price, 0);
+
+  const noshowCount = todayRes.filter((r) => r.status === "noshow").length;
 
   function handleReset() {
     resetDemoData();
@@ -55,7 +74,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="오늘 예약"
-            value="42건"
+            value={`${todayRes.length}건`}
             icon={CalendarDays}
             iconColor="text-blue-600"
             iconBg="bg-blue-50"
@@ -73,7 +92,7 @@ export default function DashboardPage() {
           />
           <StatCard
             title="예상 매출"
-            value={`${(todayRevenue).toLocaleString()}원`}
+            value={`${todayRevenue.toLocaleString()}원`}
             icon={TrendingUp}
             iconColor="text-purple-600"
             iconBg="bg-purple-50"
@@ -82,7 +101,7 @@ export default function DashboardPage() {
           />
           <StatCard
             title="노쇼 건수"
-            value="2건"
+            value={`${noshowCount}건`}
             icon={AlertTriangle}
             iconColor="text-red-500"
             iconBg="bg-red-50"
@@ -141,35 +160,39 @@ export default function DashboardPage() {
               <a href="/calendar" className="text-sm text-blue-600 hover:underline">전체 보기 →</a>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {["시간", "고객명", "시술", "디자이너", "출처", "상태"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {todayRes.map((r) => (
-                    <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">{r.time}</td>
-                      <td className="px-4 py-3 text-gray-800">{r.customerName}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.serviceName}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.designerName}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sourceColor(r.source)}`}>
-                          {sourceLabel(r.source)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>
-                          {statusLabel(r.status)}
-                        </span>
-                      </td>
+              {todayRes.length === 0 ? (
+                <div className="px-5 py-8 text-center text-sm text-gray-400">예약 데이터가 없습니다.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {["시간", "고객명", "시술", "디자이너", "출처", "상태"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {todayRes.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-gray-900">{r.time}</td>
+                        <td className="px-4 py-3 text-gray-800">{r.customerName}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.serviceName}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.designerName}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sourceColor(r.source)}`}>
+                            {sourceLabel(r.source)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>
+                            {statusLabel(r.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
@@ -177,28 +200,31 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <h2 className="font-semibold text-gray-900 mb-4">디자이너별 오늘 예약</h2>
             <div className="space-y-4">
-              {MOCK_DESIGNERS.map((d) => (
-                <div key={d.id} className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                    style={{ background: d.color }}
-                  >
-                    {d.profileInitial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">{d.name}</span>
-                      <span className="text-sm font-bold text-blue-600">{d.todayReservations}건</span>
+              {designers.map((d) => {
+                const cnt = todayRes.filter((r) => r.designerId === d.id).length;
+                return (
+                  <div key={d.id} className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                      style={{ background: d.color }}
+                    >
+                      {d.profileInitial}
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className="h-1.5 rounded-full transition-all"
-                        style={{ width: `${((d.todayReservations ?? 0) / 10) * 100}%`, background: d.color }}
-                      />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-900">{d.name}</span>
+                        <span className="text-sm font-bold text-blue-600">{cnt}건</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div
+                          className="h-1.5 rounded-full transition-all"
+                          style={{ width: `${(cnt / 10) * 100}%`, background: d.color }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
@@ -207,9 +233,9 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-blue-900">오늘 운영 요약</span>
               </div>
               <div className="space-y-1 text-xs text-blue-800">
-                <p>· 취소: 3건 / 노쇼: 1건</p>
+                <p>· 취소: {todayRes.filter((r) => r.status === "cancelled").length}건 / 노쇼: {noshowCount}건</p>
                 <p>· 가장 바쁜 시간대: 13시</p>
-                <p>· 완료 예약: {todayRes.filter(r => r.status === "completed").length}건</p>
+                <p>· 완료 예약: {todayRes.filter((r) => r.status === "completed").length}건</p>
               </div>
             </div>
           </div>

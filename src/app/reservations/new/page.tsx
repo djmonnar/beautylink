@@ -1,19 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/layout/AdminLayout";
-import { MOCK_DESIGNERS, MOCK_SERVICES, addReservation, Reservation } from "@/data/mock";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { addReservation } from "@/services/reservations";
+import { getDesigners } from "@/services/designers";
+import { getServices } from "@/services/services";
+import type { Reservation, Designer, ServiceMenu } from "@/types";
 
 export default function NewReservationPage() {
   const router = useRouter();
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
+  const [designers, setDesigners] = useState<Designer[]>([]);
+  const [services, setServices] = useState<ServiceMenu[]>([]);
+
   const [form, setForm] = useState({
     customerName: "",
     customerPhone: "",
     designerId: "",
     serviceId: "",
-    date: "2025-05-25",
+    date: new Date().toISOString().split("T")[0],
     time: "10:00",
     source: "phone" as Reservation["source"],
     status: "confirmed" as Reservation["status"],
@@ -21,9 +31,15 @@ export default function NewReservationPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const selectedDesigner = MOCK_DESIGNERS.find((d) => d.id === form.designerId);
-  const selectedService = MOCK_SERVICES.find((s) => s.id === form.serviceId);
+  useEffect(() => {
+    getDesigners(salonId).then(setDesigners);
+    getServices(salonId).then(setServices);
+  }, [salonId]);
+
+  const selectedDesigner = designers.find((d) => d.id === form.designerId);
+  const selectedService = services.find((s) => s.id === form.serviceId);
 
   function validate() {
     const e: Record<string, string> = {};
@@ -37,7 +53,7 @@ export default function NewReservationPage() {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -45,9 +61,9 @@ export default function NewReservationPage() {
       return;
     }
 
+    setSaving(true);
     const masked = form.customerPhone.replace(/(\d{3})-(\d{4})-(\d{4})/, "$1-****-$3");
-    const newR: Reservation = {
-      id: `r_${Date.now()}`,
+    const data: Omit<Reservation, "id"> = {
       customerId: `c_${Date.now()}`,
       customerName: form.customerName,
       customerPhoneMasked: masked,
@@ -64,7 +80,8 @@ export default function NewReservationPage() {
       price: selectedService?.price ?? 0,
     };
 
-    addReservation(newR);
+    await addReservation(salonId, data);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => router.push("/calendar"), 1500);
   }
@@ -130,7 +147,7 @@ export default function NewReservationPage() {
                     className={inputClass("designerId")}
                   >
                     <option value="">디자이너 선택</option>
-                    {MOCK_DESIGNERS.filter((d) => d.status === "active").map((d) => (
+                    {designers.filter((d) => d.status === "active").map((d) => (
                       <option key={d.id} value={d.id}>{d.name} {d.roleTitle}</option>
                     ))}
                   </select>
@@ -148,9 +165,11 @@ export default function NewReservationPage() {
                       className={inputClass("serviceId")}
                     >
                       <option value="">시술 선택</option>
-                      {MOCK_SERVICES.filter((s) => s.active && (!form.designerId || s.assignedDesignerIds.includes(form.designerId))).map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.price.toLocaleString()}원)</option>
-                      ))}
+                      {services
+                        .filter((s) => s.active && (!form.designerId || s.assignedDesignerIds.includes(form.designerId)))
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.price.toLocaleString()}원)</option>
+                        ))}
                     </select>
                     {errors.serviceId && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} />{errors.serviceId}</p>}
                   </div>
@@ -234,8 +253,12 @@ export default function NewReservationPage() {
               <button type="button" onClick={() => router.back()} className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
                 취소
               </button>
-              <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                저장
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? "저장 중..." : "저장"}
               </button>
             </div>
           </form>

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
-import { MOCK_CUSTOMERS, gradeColor, Customer } from "@/data/mock";
+import { gradeColor } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { getCustomers } from "@/services/customers";
+import type { Customer } from "@/types";
 import { Search, Plus, MessageSquare, MoreHorizontal, Calendar } from "lucide-react";
 
 function CustomerDetail({ c }: { c: Customer }) {
@@ -121,21 +124,32 @@ function CustomerDetail({ c }: { c: Customer }) {
 }
 
 export default function CustomersPage() {
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Customer>(MOCK_CUSTOMERS[0]);
+  const [selected, setSelected] = useState<Customer | null>(null);
   const [filter, setFilter] = useState<string>("전체");
 
-  const filtered = MOCK_CUSTOMERS.filter((c) => {
+  useEffect(() => {
+    getCustomers(salonId).then((list) => {
+      setCustomers(list);
+      if (list.length > 0) setSelected(list[0]);
+    });
+  }, [salonId]);
+
+  const filtered = customers.filter((c) => {
     const matchSearch = c.name.includes(search) || c.phoneMasked.includes(search);
     const matchFilter = filter === "전체" || c.grade === filter;
     return matchSearch && matchFilter;
   });
 
   const counts = {
-    전체: MOCK_CUSTOMERS.length,
-    VIP: MOCK_CUSTOMERS.filter((c) => c.grade === "VIP").length,
-    신규: MOCK_CUSTOMERS.filter((c) => c.grade === "신규").length,
-    재방문: MOCK_CUSTOMERS.filter((c) => c.grade === "재방문").length,
+    전체: customers.length,
+    VIP: customers.filter((c) => c.grade === "VIP").length,
+    신규: customers.filter((c) => c.grade === "신규").length,
+    재방문: customers.filter((c) => c.grade === "재방문").length,
   };
 
   return (
@@ -186,35 +200,45 @@ export default function CustomersPage() {
 
           {/* List */}
           <div className="space-y-1">
-            {filtered.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className={`p-3 rounded-xl cursor-pointer border transition-all ${selected.id === c.id ? "bg-blue-50 border-blue-200" : "bg-white border-transparent hover:border-gray-200 hover:bg-gray-50"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {c.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900 text-sm">{c.name}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${gradeColor(c.grade)}`}>{c.grade}</span>
+            {filtered.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">고객 데이터가 없습니다.</p>
+            ) : (
+              filtered.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => setSelected(c)}
+                  className={`p-3 rounded-xl cursor-pointer border transition-all ${selected?.id === c.id ? "bg-blue-50 border-blue-200" : "bg-white border-transparent hover:border-gray-200 hover:bg-gray-50"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {c.name[0]}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{c.phoneMasked}</p>
-                    <p className="text-xs text-gray-400">최근 방문 {c.lastVisitDate || "-"}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 text-sm">{c.name}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${gradeColor(c.grade)}`}>{c.grade}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">{c.phoneMasked}</p>
+                      <p className="text-xs text-gray-400">최근 방문 {c.lastVisitDate || "-"}</p>
+                    </div>
+                    <button className="text-gray-300 hover:text-gray-600 flex-shrink-0">
+                      <MoreHorizontal size={14} />
+                    </button>
                   </div>
-                  <button className="text-gray-300 hover:text-gray-600 flex-shrink-0">
-                    <MoreHorizontal size={14} />
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         {/* Detail panel */}
-        <CustomerDetail c={selected} />
+        {selected ? (
+          <CustomerDetail c={selected} />
+        ) : (
+          <div className="flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center justify-center">
+            <p className="text-sm text-gray-400">고객을 선택하세요.</p>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

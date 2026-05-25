@@ -2,15 +2,28 @@
 
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
-import { getServices, saveServices, ServiceMenu, MOCK_DESIGNERS } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { getServices, addService, updateService, toggleServiceActive } from "@/services/services";
+import { getDesigners } from "@/services/designers";
+import type { ServiceMenu, Designer } from "@/types";
 import { Plus, Edit2, Search } from "lucide-react";
 
 const CATEGORIES = ["전체", "컷", "펌", "염색", "클리닉", "두피케어", "기타"] as const;
 
 type Category = typeof CATEGORIES[number];
 
-function ServiceModal({ service, onClose, onSave }: {
+const CAT_COLORS: Record<string, string> = {
+  컷: "bg-blue-100 text-blue-700",
+  펌: "bg-purple-100 text-purple-700",
+  염색: "bg-pink-100 text-pink-700",
+  클리닉: "bg-green-100 text-green-700",
+  두피케어: "bg-teal-100 text-teal-700",
+  기타: "bg-gray-100 text-gray-600",
+};
+
+function ServiceModal({ service, designers, onClose, onSave }: {
   service: ServiceMenu | null;
+  designers: Designer[];
   onClose: () => void;
   onSave: (s: ServiceMenu) => void;
 }) {
@@ -34,17 +47,17 @@ function ServiceModal({ service, onClose, onSave }: {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">카테고리</label>
               <select
                 value={form.category}
-                onChange={e => setForm({...form, category: e.target.value as ServiceMenu["category"]})}
+                onChange={e => setForm({ ...form, category: e.target.value as ServiceMenu["category"] })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {["컷","펌","염색","클리닉","두피케어","기타"].map(c => <option key={c}>{c}</option>)}
+                {["컷", "펌", "염색", "클리닉", "두피케어", "기타"].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">메뉴명</label>
               <input
                 value={form.name}
-                onChange={e => setForm({...form, name: e.target.value})}
+                onChange={e => setForm({ ...form, name: e.target.value })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="여성 컷"
               />
@@ -56,7 +69,7 @@ function ServiceModal({ service, onClose, onSave }: {
               <input
                 type="number"
                 value={form.price}
-                onChange={e => setForm({...form, price: Number(e.target.value)})}
+                onChange={e => setForm({ ...form, price: Number(e.target.value) })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -65,7 +78,7 @@ function ServiceModal({ service, onClose, onSave }: {
               <input
                 type="number"
                 value={form.duration}
-                onChange={e => setForm({...form, duration: Number(e.target.value)})}
+                onChange={e => setForm({ ...form, duration: Number(e.target.value) })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -73,7 +86,7 @@ function ServiceModal({ service, onClose, onSave }: {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">담당 디자이너</label>
             <div className="flex flex-wrap gap-2">
-              {MOCK_DESIGNERS.map(d => (
+              {designers.map(d => (
                 <label key={d.id} className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -82,7 +95,7 @@ function ServiceModal({ service, onClose, onSave }: {
                       const ids = e.target.checked
                         ? [...form.assignedDesignerIds, d.id]
                         : form.assignedDesignerIds.filter(id => id !== d.id);
-                      setForm({...form, assignedDesignerIds: ids});
+                      setForm({ ...form, assignedDesignerIds: ids });
                     }}
                     className="rounded text-blue-600"
                   />
@@ -95,7 +108,7 @@ function ServiceModal({ service, onClose, onSave }: {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">네이버 메뉴명 (연동 준비)</label>
             <input
               value={form.naverMenuName ?? ""}
-              onChange={e => setForm({...form, naverMenuName: e.target.value})}
+              onChange={e => setForm({ ...form, naverMenuName: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="네이버예약 메뉴명"
             />
@@ -111,28 +124,37 @@ function ServiceModal({ service, onClose, onSave }: {
 }
 
 export default function ServicesPage() {
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
   const [services, setServices] = useState<ServiceMenu[]>([]);
+  const [designers, setDesigners] = useState<Designer[]>([]);
   const [category, setCategory] = useState<Category>("전체");
   const [search, setSearch] = useState("");
   const [selectedService, setSelectedService] = useState<ServiceMenu | null>(null);
   const [modalService, setModalService] = useState<ServiceMenu | null | undefined>(undefined);
 
   useEffect(() => {
-    setServices(getServices());
-  }, []);
+    getServices(salonId).then(setServices);
+    getDesigners(salonId).then(setDesigners);
+  }, [salonId]);
 
-  function handleSave(s: ServiceMenu) {
-    const updated = services.some(x => x.id === s.id)
-      ? services.map(x => x.id === s.id ? s : x)
-      : [...services, s];
-    setServices(updated);
-    saveServices(updated);
+  async function handleSave(s: ServiceMenu) {
+    const exists = services.some(x => x.id === s.id);
+    if (exists) {
+      await updateService(salonId, s.id, s);
+      setServices(prev => prev.map(x => x.id === s.id ? s : x));
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...rest } = s;
+      const newId = await addService(salonId, rest);
+      setServices(prev => [...prev, { ...s, id: newId }]);
+    }
   }
 
-  function toggleActive(id: string) {
-    const updated = services.map(s => s.id === id ? {...s, active: !s.active} : s);
-    setServices(updated);
-    saveServices(updated);
+  async function handleToggleActive(id: string, active: boolean) {
+    await toggleServiceActive(salonId, id, !active);
+    setServices(prev => prev.map(s => s.id === id ? { ...s, active: !active } : s));
   }
 
   const filtered = services.filter(s => {
@@ -141,19 +163,15 @@ export default function ServicesPage() {
     return matchCat && matchSearch;
   });
 
-  const CAT_COLORS: Record<string, string> = {
-    컷: "bg-blue-100 text-blue-700",
-    펌: "bg-purple-100 text-purple-700",
-    염색: "bg-pink-100 text-pink-700",
-    클리닉: "bg-green-100 text-green-700",
-    두피케어: "bg-teal-100 text-teal-700",
-    기타: "bg-gray-100 text-gray-600",
-  };
-
   return (
     <AdminLayout title="시술 메뉴 관리" description="시술 메뉴, 가격, 소요시간을 관리하세요.">
       {modalService !== undefined && (
-        <ServiceModal service={modalService} onClose={() => setModalService(undefined)} onSave={handleSave} />
+        <ServiceModal
+          service={modalService}
+          designers={designers}
+          onClose={() => setModalService(undefined)}
+          onSave={handleSave}
+        />
       )}
 
       <div className="flex gap-6 flex-col lg:flex-row">
@@ -215,12 +233,12 @@ export default function ServicesPage() {
                     <td className="px-4 py-3 text-gray-700">{s.price.toLocaleString()}원</td>
                     <td className="px-4 py-3 text-gray-600">{s.duration}분</td>
                     <td className="px-4 py-3 text-gray-600 text-xs">
-                      {MOCK_DESIGNERS.filter(d => s.assignedDesignerIds.includes(d.id)).map(d => d.name).join(", ") || "-"}
+                      {designers.filter(d => s.assignedDesignerIds.includes(d.id)).map(d => d.name).join(", ") || "-"}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500">{s.naverMenuName ?? "-"}</td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={e => { e.stopPropagation(); toggleActive(s.id); }}
+                        onClick={e => { e.stopPropagation(); handleToggleActive(s.id, s.active); }}
                         className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${s.active ? "bg-blue-600" : "bg-gray-200"}`}
                       >
                         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${s.active ? "translate-x-4" : "translate-x-0.5"}`} />
@@ -265,7 +283,7 @@ export default function ServicesPage() {
                 <div>
                   <p className="text-gray-500 text-xs mb-2">담당 디자이너</p>
                   <div className="flex flex-wrap gap-1">
-                    {MOCK_DESIGNERS.filter(d => selectedService.assignedDesignerIds.includes(d.id)).map(d => (
+                    {designers.filter(d => selectedService.assignedDesignerIds.includes(d.id)).map(d => (
                       <span key={d.id} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">{d.name}</span>
                     ))}
                   </div>

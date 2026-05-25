@@ -1,29 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import {
   ChevronLeft,
   ChevronRight,
   Bell,
 } from "lucide-react";
-import {
-  MOCK_RESERVATIONS,
-  MOCK_DESIGNERS,
-  sourceColor,
-  sourceLabel,
-  statusColor,
-  statusLabel,
-  Reservation,
-} from "@/data/mock";
+import { sourceColor, sourceLabel, statusColor, statusLabel } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { subscribeReservations } from "@/services/reservations";
+import { getDesigners } from "@/services/designers";
+import type { Reservation, Designer } from "@/types";
 
 const HOURS = Array.from({ length: 12 }, (_, i) => `${i + 9}:00`);
 
-const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+// 시드 데이터가 있는 데모 날짜
+const DEMO_DATE = "2025-05-25";
 
-function getTimeSlot(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return (h - 9) * 60 + m;
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+function formatDateDisplay(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  // 7일 범위로 표시
+  const end = new Date(d);
+  end.setDate(d.getDate() + 6);
+  const em = String(end.getMonth() + 1).padStart(2, "0");
+  const ed = String(end.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}.${mm}.${dd} (${days[d.getDay()]}) ~ ${em}.${ed} (${days[end.getDay()]})`;
 }
 
 function ReservationModal({ r, onClose }: { r: Reservation; onClose: () => void }) {
@@ -69,12 +80,27 @@ function ReservationModal({ r, onClose }: { r: Reservation; onClose: () => void 
 }
 
 export default function CalendarPage() {
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
   const [view, setView] = useState<"일" | "주" | "월">("주");
+  const [viewDate, setViewDate] = useState(DEMO_DATE);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [designers, setDesigners] = useState<Designer[]>([]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
 
-  const todayRes = MOCK_RESERVATIONS.filter((r) => r.date === "2025-05-25");
+  // 실시간 예약 구독
+  useEffect(() => {
+    const unsub = subscribeReservations(salonId, viewDate, setReservations);
+    return () => unsub();
+  }, [salonId, viewDate]);
 
-  const activeDesigners = MOCK_DESIGNERS.filter((d) => d.status === "active");
+  // 디자이너 1회 로드
+  useEffect(() => {
+    getDesigners(salonId).then(setDesigners);
+  }, [salonId]);
+
+  const activeDesigners = designers.filter((d) => d.status === "active");
 
   const SOURCE_COLORS_BG: Record<string, string> = {
     naver: "bg-emerald-100 border-emerald-300",
@@ -89,6 +115,12 @@ export default function CalendarPage() {
     visit: "text-rose-800",
     kakao: "text-purple-800",
   };
+
+  const step = view === "일" ? 1 : 7;
+
+  const confirmed = reservations.filter((r) => r.status === "confirmed").length;
+  const pending = reservations.filter((r) => r.status === "pending").length;
+  const cancelled = reservations.filter((r) => r.status === "cancelled").length;
 
   return (
     <AdminLayout title="예약 통합 캘린더" description="디자이너별 예약 현황을 한눈에 확인하고 관리하세요.">
@@ -112,10 +144,25 @@ export default function CalendarPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"><ChevronLeft size={18} /></button>
-            <span className="text-sm font-semibold text-gray-900">2025.05.12 (월) ~ 05.18 (일)</span>
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"><ChevronRight size={18} /></button>
-            <button className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50">오늘</button>
+            <button
+              onClick={() => setViewDate((d) => addDays(d, -step))}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-sm font-semibold text-gray-900">{formatDateDisplay(viewDate)}</span>
+            <button
+              onClick={() => setViewDate((d) => addDays(d, step))}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+            >
+              <ChevronRight size={18} />
+            </button>
+            <button
+              onClick={() => setViewDate(DEMO_DATE)}
+              className="text-sm text-blue-600 font-medium px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50"
+            >
+              오늘
+            </button>
           </div>
 
           <div className="ml-auto flex items-center gap-3 text-xs">
@@ -139,7 +186,7 @@ export default function CalendarPage() {
             <div className="overflow-x-auto">
               <div style={{ minWidth: 600 }}>
                 {/* Header */}
-                <div className="grid border-b border-gray-100" style={{ gridTemplateColumns: "60px repeat(4, 1fr)" }}>
+                <div className="grid border-b border-gray-100" style={{ gridTemplateColumns: `60px repeat(${Math.max(activeDesigners.length, 1)}, 1fr)` }}>
                   <div className="p-3 text-xs text-gray-400 font-medium text-center border-r border-gray-100">시간</div>
                   {activeDesigners.map((d) => (
                     <div key={d.id} className="p-3 border-r border-gray-100 last:border-r-0">
@@ -163,13 +210,13 @@ export default function CalendarPage() {
                     <div
                       key={hour}
                       className="grid border-b border-gray-50"
-                      style={{ gridTemplateColumns: "60px repeat(4, 1fr)", minHeight: 64 }}
+                      style={{ gridTemplateColumns: `60px repeat(${Math.max(activeDesigners.length, 1)}, 1fr)`, minHeight: 64 }}
                     >
                       <div className="p-2 text-xs text-gray-400 text-right pr-3 pt-2 border-r border-gray-100 flex-shrink-0">
                         {hour}
                       </div>
                       {activeDesigners.map((d) => {
-                        const resInSlot = todayRes.filter((r) => {
+                        const resInSlot = reservations.filter((r) => {
                           const h = parseInt(r.time.split(":")[0]);
                           return r.designerId === d.id && h === hourNum;
                         });
@@ -179,9 +226,9 @@ export default function CalendarPage() {
                               <div
                                 key={r.id}
                                 onClick={() => setSelectedReservation(r)}
-                                className={`rounded-lg px-2 py-1.5 mb-1 cursor-pointer border text-xs transition-opacity hover:opacity-80 ${SOURCE_COLORS_BG[r.source]}`}
+                                className={`rounded-lg px-2 py-1.5 mb-1 cursor-pointer border text-xs transition-opacity hover:opacity-80 ${SOURCE_COLORS_BG[r.source] ?? "bg-gray-100 border-gray-200"}`}
                               >
-                                <p className={`font-semibold ${SOURCE_TEXT[r.source]}`}>{r.customerName}</p>
+                                <p className={`font-semibold ${SOURCE_TEXT[r.source] ?? "text-gray-800"}`}>{r.customerName}</p>
                                 <p className="text-gray-600 truncate">{r.serviceName}</p>
                               </div>
                             ))}
@@ -199,13 +246,13 @@ export default function CalendarPage() {
           <div className="w-64 flex-shrink-0 space-y-4">
             {/* Today summary */}
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-3 text-sm">오늘의 예약 요약</h3>
-              <p className="text-xs text-gray-400 mb-3">2025.05.14 (수)</p>
+              <h3 className="font-semibold text-gray-900 mb-3 text-sm">예약 요약</h3>
+              <p className="text-xs text-gray-400 mb-3">{viewDate}</p>
               {[
-                { label: "전체 예약", value: "18건", color: "text-gray-900" },
-                { label: "확정 예약", value: "16건", color: "text-blue-600" },
-                { label: "상담/대기", value: "2건", color: "text-yellow-600" },
-                { label: "취소", value: "0건", color: "text-gray-400" },
+                { label: "전체 예약", value: `${reservations.length}건`, color: "text-gray-900" },
+                { label: "확정 예약", value: `${confirmed}건`, color: "text-blue-600" },
+                { label: "상담/대기", value: `${pending}건`, color: "text-yellow-600" },
+                { label: "취소", value: `${cancelled}건`, color: "text-gray-400" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
                   <span className="text-xs text-gray-500">{item.label}</span>
@@ -221,7 +268,7 @@ export default function CalendarPage() {
                     <circle r="14" cx="16" cy="16" fill="none" stroke="#f43f5e" strokeWidth="4" strokeDasharray="15 73" strokeDashoffset="-73" />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-gray-900">18건</span>
+                    <span className="text-xs font-bold text-gray-900">{reservations.length}건</span>
                   </div>
                 </div>
                 {[

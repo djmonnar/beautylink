@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
-import { MOCK_DESIGNERS, MOCK_RESERVATIONS, Designer } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { getDesigners } from "@/services/designers";
+import { getReservations } from "@/services/reservations";
+import type { Designer, Reservation } from "@/types";
 import { Plus, Edit2, Clock, CalendarOff } from "lucide-react";
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
 
+// 시드 데이터 날짜
+const DEMO_DATE = "2025-05-25";
+
 function DesignerModal({ designer, onClose }: { designer: Designer | null; onClose: () => void }) {
   const [form, setForm] = useState(designer ?? {
     id: "", name: "", roleTitle: "디자이너", status: "active" as const,
     phoneMasked: "", profileInitial: "", color: "#3b82f6",
-    services: [], workDays: [1,2,3,4,5], startTime: "09:00",
+    services: [], workDays: [1, 2, 3, 4, 5], startTime: "09:00",
     endTime: "19:00", daysOff: [], todayReservations: 0,
     totalReservations: 0, joinedAt: "",
   });
@@ -24,23 +30,23 @@ function DesignerModal({ designer, onClose }: { designer: Designer | null; onClo
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">이름</label>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">직책</label>
-            <input value={form.roleTitle} onChange={e => setForm({...form, roleTitle: e.target.value})}
+            <input value={form.roleTitle} onChange={e => setForm({ ...form, roleTitle: e.target.value })}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">근무 시작</label>
-              <input type="time" value={form.startTime} onChange={e => setForm({...form, startTime: e.target.value})}
+              <input type="time" value={form.startTime} onChange={e => setForm({ ...form, startTime: e.target.value })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">근무 종료</label>
-              <input type="time" value={form.endTime} onChange={e => setForm({...form, endTime: e.target.value})}
+              <input type="time" value={form.endTime} onChange={e => setForm({ ...form, endTime: e.target.value })}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
@@ -55,7 +61,7 @@ function DesignerModal({ designer, onClose }: { designer: Designer | null; onClo
                     const days = form.workDays.includes(i)
                       ? form.workDays.filter(x => x !== i)
                       : [...form.workDays, i];
-                    setForm({...form, workDays: days});
+                    setForm({ ...form, workDays: days });
                   }}
                   className={`w-9 h-9 rounded-full text-sm font-medium transition-colors ${form.workDays.includes(i) ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}
                 >
@@ -75,8 +81,17 @@ function DesignerModal({ designer, onClose }: { designer: Designer | null; onClo
 }
 
 export default function DesignersPage() {
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
+  const [designers, setDesigners] = useState<Designer[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [modalDesigner, setModalDesigner] = useState<Designer | null | undefined>(undefined);
-  const todayDate = "2025-05-25";
+
+  useEffect(() => {
+    getDesigners(salonId).then(setDesigners);
+    getReservations(salonId, DEMO_DATE).then(setReservations);
+  }, [salonId]);
 
   return (
     <AdminLayout title="디자이너 관리" description="디자이너별 근무시간, 휴무일, 담당 시술을 관리하세요.">
@@ -97,8 +112,8 @@ export default function DesignersPage() {
 
         {/* Designer cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MOCK_DESIGNERS.map((d) => {
-            const todayR = MOCK_RESERVATIONS.filter(r => r.designerId === d.id && r.date === todayDate);
+          {designers.map((d) => {
+            const todayR = reservations.filter(r => r.designerId === d.id);
             return (
               <div key={d.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                 <div className="flex items-start justify-between mb-4">
@@ -121,7 +136,7 @@ export default function DesignersPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${d.status === "active" ? "bg-green-500" : "bg-gray-400"}`} />
                     {d.status === "active" ? "근무 중" : "휴무"}
                   </span>
-                  <span className="text-xs text-gray-500">오늘 {d.todayReservations}건</span>
+                  <span className="text-xs text-gray-500">오늘 {todayR.length}건</span>
                 </div>
 
                 {/* Work days */}
@@ -181,7 +196,7 @@ export default function DesignersPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-gray-500 font-medium w-20">시간</th>
-                  {MOCK_DESIGNERS.map((d) => (
+                  {designers.map((d) => (
                     <th key={d.id} className="px-4 py-3 text-center text-gray-700 font-semibold">
                       <div className="flex items-center justify-center gap-1.5">
                         <div className="w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center" style={{ background: d.color }}>{d.profileInitial}</div>
@@ -195,12 +210,12 @@ export default function DesignersPage() {
                 {TIME_SLOTS.map((time) => (
                   <tr key={time} className="border-t border-gray-50">
                     <td className="px-4 py-2.5 text-gray-400">{time}</td>
-                    {MOCK_DESIGNERS.map((d) => {
+                    {designers.map((d) => {
                       const hour = parseInt(time.split(":")[0]);
                       const start = parseInt(d.startTime.split(":")[0]);
                       const end = parseInt(d.endTime.split(":")[0]);
                       const isWorking = d.status === "active" && hour >= start && hour < end;
-                      const res = MOCK_RESERVATIONS.find(r => r.designerId === d.id && r.date === todayDate && parseInt(r.time.split(":")[0]) === hour);
+                      const res = reservations.find(r => r.designerId === d.id && parseInt(r.time.split(":")[0]) === hour);
                       return (
                         <td key={d.id} className="px-2 py-1.5 text-center">
                           {res ? (
