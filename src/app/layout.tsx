@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
-const BASE_URL = "https://beautylink-rgxwq7p0u-djmonnar4-3362s-projects.vercel.app";
+const BASE_URL = "https://beautylink-alpha.vercel.app";
 
 export const metadata: Metadata = {
   title: "뷰티링크 - 미용실 예약관리 CRM",
