@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import AppSidebar from "./AppSidebar";
 import TopHeader from "./TopHeader";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
   title: string;
@@ -12,6 +15,32 @@ interface Props {
 
 export default function AdminLayout({ title, description, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, loading, firebaseReady } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Firebase 설정된 경우에만 인증 체크
+    if (!loading && firebaseReady && !user) {
+      router.replace("/login");
+    }
+  }, [user, loading, firebaseReady, router]);
+
+  // 로딩 중
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={32} className="animate-spin text-blue-600" />
+          <p className="text-sm text-gray-500">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Firebase 설정됐는데 로그인 안 된 경우 — redirect 전 빈 화면
+  if (firebaseReady && !user) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">

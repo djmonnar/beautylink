@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -13,8 +13,10 @@ import {
   MessageSquare,
   Shield,
   X,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
@@ -28,6 +30,12 @@ const NAV_ITEMS = [
   { href: "/security", label: "보안 및 권한 관리", icon: Shield },
 ];
 
+const ROLE_LABEL: Record<string, string> = {
+  owner: "원장",
+  manager: "매니저",
+  designer: "디자이너",
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -35,6 +43,16 @@ interface Props {
 
 export default function AppSidebar({ open, onClose }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, userData, logout, firebaseReady } = useAuth();
+
+  const displayName = userData?.name ?? user?.email?.split("@")[0] ?? "관리자";
+  const roleLabel = userData?.role ? ROLE_LABEL[userData.role] : "원장";
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   return (
     <>
@@ -59,12 +77,7 @@ export default function AppSidebar({ open, onClose }: Props) {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/logo-icon-white.png"
-              alt="뷰티링크"
-              width={30}
-              height={30}
-            />
+            <Image src="/logo-icon-white.png" alt="뷰티링크" width={30} height={30} />
             <Image
               src="/logo-horizontal-white.png"
               alt="뷰티링크"
@@ -78,7 +91,7 @@ export default function AppSidebar({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Store info */}
+        {/* 매장 정보 */}
         <div className="px-5 py-4 border-b border-white/10">
           <p className="text-xs text-white/50 mb-1">현재 매장</p>
           <p className="text-sm font-semibold text-white leading-tight">뷰티링크 헤어 강남점</p>
@@ -118,11 +131,38 @@ export default function AppSidebar({ open, onClose }: Props) {
           </ul>
         </nav>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/10">
-          <Link href="/" className="text-xs text-white/40 hover:text-white/70 transition-colors">
-            ← 랜딩페이지로
-          </Link>
+        {/* 하단: 로그인 정보 + 로그아웃 */}
+        <div className="px-4 py-4 border-t border-white/10 space-y-3">
+          {/* 유저 정보 */}
+          {firebaseReady && user && (
+            <div className="flex items-center gap-3 px-1">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                {displayName[0]}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                <p className="text-xs text-white/50">{roleLabel}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Link
+              href="/"
+              className="flex-1 text-center text-xs text-white/40 hover:text-white/70 transition-colors py-1.5"
+            >
+              ← 랜딩페이지
+            </Link>
+            {firebaseReady && user && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-red-400 transition-colors py-1.5 px-2 rounded-lg hover:bg-white/5"
+              >
+                <LogOut size={13} />
+                로그아웃
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </>
