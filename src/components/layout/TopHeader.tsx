@@ -22,7 +22,7 @@ export default function TopHeader({ onMenuClick, title, description }: Props) {
 
       {/* Mobile logo */}
       <div className="lg:hidden flex items-center">
-        <Image src="/logo-icon.svg" alt="뷰티링크" width={26} height={26} />
+        <Image src="/logo-compact.png" alt="뷰티링크" width={90} height={28} className="object-contain" />
       </div>
 
       {/* Title */}

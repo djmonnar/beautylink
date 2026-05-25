@@ -58,15 +58,20 @@ export default function AppSidebar({ open, onClose }: Props) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image
-              src="/logo-icon-mono.svg"
+              src="/logo-icon-white.png"
               alt="뷰티링크"
-              width={32}
-              height={32}
-              className="mr-2 brightness-0 invert"
+              width={30}
+              height={30}
             />
-            <span className="font-extrabold text-lg tracking-[-0.04em] text-white">뷰티링크</span>
+            <Image
+              src="/logo-horizontal-white.png"
+              alt="뷰티링크"
+              width={100}
+              height={26}
+              className="object-contain"
+            />
           </Link>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white">
             <X size={20} />
