@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarDays,
   Users,
@@ -8,7 +9,6 @@ import {
   CheckCircle,
   AlertCircle,
   Link2,
-  Sparkles,
   ChevronRight,
   Star,
   Clock,
@@ -22,11 +22,8 @@ export default function LandingPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Sparkles size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-xl text-gray-900">뷰티링크</span>
+          <div className="flex items-center">
+            <Image src="/logo.svg" alt="뷰티링크" width={140} height={36} priority />
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
             <a href="#features" className="hover:text-gray-900">기능</a>
@@ -104,10 +101,8 @@ export default function LandingPage() {
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
                 {/* Mini dashboard */}
                 <div className="bg-[#1e2a4a] px-4 py-3 flex items-center gap-2">
-                  <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
-                    <Sparkles size={12} className="text-white" />
-                  </div>
-                  <span className="text-white text-sm font-medium">뷰티링크</span>
+                  <Image src="/logo-icon-mono.svg" alt="뷰티링크" width={22} height={22} className="brightness-0 invert" />
+                  <span className="text-white text-sm font-extrabold tracking-[-0.04em]">뷰티링크</span>
                 </div>
                 <div className="p-4 bg-gray-50">
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -411,11 +406,9 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white/60 py-10 px-4 text-center text-sm">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
-            <Sparkles size={12} className="text-white" />
-          </div>
-          <span className="text-white font-semibold">뷰티링크</span>
+        <div className="flex items-center justify-center mb-3">
+          <Image src="/logo-icon-mono.svg" alt="뷰티링크" width={24} height={24} className="brightness-0 invert mr-2 opacity-70" />
+          <span className="text-white font-extrabold tracking-[-0.04em]">뷰티링크</span>
         </div>
         <p className="mb-2">미용실·네일샵·뷰티샵을 위한 예약관리 CRM</p>
         <p className="text-xs text-white/30">

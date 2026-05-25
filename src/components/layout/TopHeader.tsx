@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Menu, ChevronDown } from "lucide-react";
+import Image from "next/image";
 
 interface Props {
   onMenuClick: () => void;
@@ -18,6 +19,11 @@ export default function TopHeader({ onMenuClick, title, description }: Props) {
       >
         <Menu size={20} />
       </button>
+
+      {/* Mobile logo */}
+      <div className="lg:hidden flex items-center">
+        <Image src="/logo-icon.svg" alt="뷰티링크" width={26} height={26} />
+      </div>
 
       {/* Title */}
       <div className="flex-1 min-w-0">

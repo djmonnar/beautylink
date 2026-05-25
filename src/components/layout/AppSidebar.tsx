@@ -13,8 +13,8 @@ import {
   MessageSquare,
   Shield,
   X,
-  Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
@@ -58,11 +58,15 @@ export default function AppSidebar({ open, onClose }: Props) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Sparkles size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">뷰티링크</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo-icon-mono.svg"
+              alt="뷰티링크"
+              width={32}
+              height={32}
+              className="mr-2 brightness-0 invert"
+            />
+            <span className="font-extrabold text-lg tracking-[-0.04em] text-white">뷰티링크</span>
           </Link>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white">
             <X size={20} />
