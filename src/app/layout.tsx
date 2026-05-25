@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        width: 1731,
+        height: 909,
         alt: "뷰티링크 - 미용실 예약관리 CRM",
       },
     ],
