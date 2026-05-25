@@ -100,9 +100,8 @@ export default function LandingPage() {
             <div className="flex-1 w-full max-w-xl">
               <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
                 {/* Mini dashboard */}
-                <div className="bg-[#1e2a4a] px-4 py-3 flex items-center gap-2">
-                  <Image src="/logo-icon-white.png" alt="뷰티링크" width={20} height={20} />
-                  <Image src="/logo-horizontal-white.png" alt="뷰티링크" width={72} height={18} className="object-contain" />
+                <div className="bg-[#1e2a4a] px-4 py-3 flex items-center">
+                  <Image src="/logo-sidebar-dark.png" alt="뷰티링크" width={90} height={22} className="object-contain" />
                 </div>
                 <div className="p-4 bg-gray-50">
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -407,7 +406,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white/60 py-10 px-4 text-center text-sm">
         <div className="flex items-center justify-center mb-3">
-          <Image src="/logo-compact-white.png" alt="뷰티링크" width={120} height={32} className="object-contain opacity-80" />
+          <Image src="/logo-sidebar-dark.png" alt="뷰티링크" width={120} height={30} className="object-contain opacity-80" />
         </div>
         <p className="mb-2">미용실·네일샵·뷰티샵을 위한 예약관리 CRM</p>
         <p className="text-xs text-white/30">

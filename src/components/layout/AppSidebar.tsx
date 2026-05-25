@@ -76,13 +76,12 @@ export default function AppSidebar({ open, onClose }: Props) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo-icon-white.png" alt="뷰티링크" width={30} height={30} />
+          <Link href="/" className="flex items-center">
             <Image
-              src="/logo-horizontal-white.png"
+              src="/logo-sidebar-dark.png"
               alt="뷰티링크"
-              width={100}
-              height={26}
+              width={130}
+              height={32}
               className="object-contain"
             />
           </Link>
