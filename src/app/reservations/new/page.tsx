@@ -86,8 +86,21 @@ export default function NewReservationPage() {
     setForm((f) => ({ ...f, customerName: "", customerPhone: "" }));
   }
 
+  // inactive 디자이너 제외, off 표시용
+  const availableDesigners = designers.filter((d) => d.status !== "inactive");
+
   const selectedDesigner = designers.find((d) => d.id === form.designerId);
   const selectedService = services.find((s) => s.id === form.serviceId);
+
+  // 선택한 디자이너가 예약 날짜에 휴무인지 확인
+  const designerOffWarning =
+    selectedDesigner &&
+    (selectedDesigner.status === "off" ||
+      (selectedDesigner.daysOff && selectedDesigner.daysOff.includes(form.date)))
+      ? selectedDesigner.status === "off"
+        ? `${selectedDesigner.name} 디자이너는 현재 휴무 상태입니다.`
+        : `${selectedDesigner.name} 디자이너는 ${form.date}에 특정 휴무일입니다.`
+      : null;
 
   function validate() {
     const e: Record<string, string> = {};
@@ -346,19 +359,24 @@ export default function NewReservationPage() {
                     className={inputClass("designerId")}
                   >
                     <option value="">디자이너 선택</option>
-                    {designers
-                      .filter((d) => d.status === "active")
-                      .map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} {d.roleTitle}
-                        </option>
-                      ))}
+                    {availableDesigners.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} {d.roleTitle}{d.status === "off" ? " [휴무]" : ""}
+                      </option>
+                    ))}
                   </select>
                   {errors.designerId && (
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <AlertCircle size={12} />
                       {errors.designerId}
                     </p>
+                  )}
+                  {/* 휴무 경고 */}
+                  {designerOffWarning && (
+                    <div className="mt-1.5 flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-lg px-3 py-2 text-xs">
+                      <AlertCircle size={12} className="flex-shrink-0" />
+                      {designerOffWarning}
+                    </div>
                   )}
                 </div>
 

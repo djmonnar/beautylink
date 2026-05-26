@@ -327,7 +327,15 @@ export default function CalendarPage() {
     getDesigners(salonId).then(setDesigners);
   }, [salonId]);
 
-  const activeDesigners = designers.filter((d) => d.status === "active");
+  // inactive 디자이너는 숨김, active/off 디자이너는 표시
+  const activeDesigners = designers.filter((d) => d.status !== "inactive");
+
+  // 특정 날짜에 디자이너가 휴무인지 확인
+  function isDesignerOff(designer: Designer, dateStr: string): boolean {
+    if (designer.status === "off") return true;
+    if (designer.daysOff && designer.daysOff.includes(dateStr)) return true;
+    return false;
+  }
 
   const SOURCE_COLORS_BG: Record<string, string> = {
     naver: "bg-emerald-50 border-emerald-300",
@@ -425,22 +433,30 @@ export default function CalendarPage() {
                   style={{ gridTemplateColumns: `60px repeat(${Math.max(activeDesigners.length, 1)}, 1fr)` }}
                 >
                   <div className="p-3 text-xs text-gray-400 font-medium text-center border-r border-gray-100">시간</div>
-                  {activeDesigners.map((d) => (
-                    <div key={d.id} className="p-3 border-r border-gray-100 last:border-r-0">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                          style={{ background: d.color }}
-                        >
-                          {d.profileInitial}
+                  {activeDesigners.map((d) => {
+                    const off = isDesignerOff(d, viewDate);
+                    return (
+                      <div key={d.id} className={`p-3 border-r border-gray-100 last:border-r-0 ${off ? "bg-gray-50" : ""}`}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${off ? "opacity-40" : ""}`}
+                            style={{ background: d.color }}
+                          >
+                            {d.profileInitial}
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`text-sm font-semibold truncate ${off ? "text-gray-400" : "text-gray-900"}`}>{d.name}</p>
+                            <p className="text-xs text-gray-400">{d.roleTitle}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{d.name}</p>
-                          <p className="text-xs text-gray-400">{d.roleTitle}</p>
-                        </div>
+                        {off && (
+                          <div className="mt-1.5 text-center">
+                            <span className="text-[9px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium">휴무</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Time slots */}
@@ -459,12 +475,13 @@ export default function CalendarPage() {
                         {hour}
                       </div>
                       {activeDesigners.map((d) => {
+                        const off = isDesignerOff(d, viewDate);
                         const resInSlot = reservations.filter((r) => {
                           const h = parseInt(r.time.split(":")[0]);
                           return r.designerId === d.id && h === hourNum;
                         });
                         return (
-                          <div key={d.id} className="border-r border-gray-50 last:border-r-0 p-1 relative">
+                          <div key={d.id} className={`border-r border-gray-50 last:border-r-0 p-1 relative ${off ? "bg-gray-50/60" : ""}`}>
                             {resInSlot.map((r) => (
                               <div
                                 key={r.id}

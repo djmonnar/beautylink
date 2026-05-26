@@ -94,16 +94,20 @@ export interface Designer {
   status: DesignerStatus;
   profileInitial: string;
   color: string;
-  services: string[];
-  workDays: number[];     // 0=일 ~ 6=토
+  services: string[];        // 담당 시술명 배열
+  serviceIds?: string[];     // 담당 시술 ID 배열
+  workDays: number[];        // 0=일 ~ 6=토
   startTime: string;
   endTime: string;
-  daysOff: string[];      // YYYY-MM-DD
+  daysOff: string[];         // YYYY-MM-DD
+  memo?: string;
   todayReservations?: number;
   totalReservations?: number;
   joinedAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string;        // uid
+  updatedBy?: string;        // uid
 }
 
 export interface ServiceMenu {
