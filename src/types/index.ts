@@ -112,7 +112,7 @@ export interface Designer {
 
 export interface ServiceMenu {
   id: string;
-  category: "컷" | "펌" | "염색" | "클리닉" | "두피케어" | "기타";
+  category: "컷" | "펌" | "염색" | "클리닉" | "두피케어" | "스타일링" | "기타";
   name: string;
   price: number;
   duration: number;

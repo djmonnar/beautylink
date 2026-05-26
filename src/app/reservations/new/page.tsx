@@ -225,7 +225,8 @@ const INITIAL_FORM: FormState = {
 export default function NewReservationPage() {
   const router = useRouter();
   const { user: authUser, userData, loading: authLoading } = useAuth();
-  const salonId = userData?.salonId ?? "salon1";
+  // salonId: 기본값 "salon1" 제거 — null이면 guard에서 차단
+  const salonId = userData?.salonId ?? null;
   const userRole = userData?.role ?? null;
 
   // acting user for logs
@@ -266,6 +267,8 @@ export default function NewReservationPage() {
 
   // Load data
   const loadData = useCallback(async () => {
+    // salonId 없으면 Firestore 조회하지 않음
+    if (!salonId) return;
     setDataLoading(true);
     setDataError(null);
     try {
@@ -284,8 +287,14 @@ export default function NewReservationPage() {
   }, [salonId]);
 
   useEffect(() => {
-    if (!authLoading && authUser) loadData();
-  }, [authLoading, authUser, loadData]);
+    if (!authLoading && authUser) {
+      if (salonId) {
+        loadData();
+      } else {
+        setDataLoading(false);
+      }
+    }
+  }, [authLoading, authUser, salonId, loadData]);
 
   // Designer role: force own designerId
   useEffect(() => {
@@ -328,6 +337,21 @@ export default function NewReservationPage() {
           <p className="font-medium text-gray-700">사용자 정보를 불러올 수 없습니다.</p>
           <p className="text-sm text-gray-500">
             <a href="/setup" className="text-blue-600 underline">초기 설정</a>을 먼저 진행해주세요.
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // salonId 없으면 임의 저장 방지
+  if (!salonId) {
+    return (
+      <AdminLayout title="예약 등록" description="">
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <AlertCircle size={36} className="text-red-500" />
+          <p className="font-medium text-gray-700">매장 정보가 연결되지 않았습니다.</p>
+          <p className="text-sm text-gray-400">
+            users/{authUser.uid}.salonId를 확인해주세요.
           </p>
         </div>
       </AdminLayout>
@@ -476,6 +500,8 @@ export default function NewReservationPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // 렌더 가드 이후에도 함수 내에서 재확인 (TypeScript narrowing)
+    if (!salonId) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
