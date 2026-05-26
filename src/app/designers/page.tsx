@@ -22,14 +22,15 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
+  AlertCircle,
   X,
   ChevronDown,
+  ShieldOff,
 } from "lucide-react";
 
 // ── 상수 ────────────────────────────────────────────────────────────────────
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
-const WEEK_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TIME_SLOTS = [
   "09:00","09:30","10:00","10:30","11:00","11:30",
   "12:00","12:30","13:00","13:30","14:00","14:30",
@@ -41,7 +42,16 @@ const PRESET_COLORS = [
   "#ef4444","#ec4899","#06b6d4","#64748b",
 ];
 const DEMO_DATE = "2025-05-25";
+
+// role → PermissionRole 매핑
 const ROLE_MAP: Record<UserRole, PermissionRole> = {
+  owner: "원장",
+  manager: "매니저",
+  designer: "디자이너",
+};
+
+// role 표시 레이블
+const ROLE_LABEL: Record<UserRole, string> = {
   owner: "원장",
   manager: "매니저",
   designer: "디자이너",
@@ -69,6 +79,15 @@ function StatusBadge({ status }: { status: Designer["status"] }) {
   );
 }
 
+// ── 전화번호 자동 하이픈 ─────────────────────────────────────────────────────
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
 // ── 디자이너 폼 초기값 ───────────────────────────────────────────────────────
 
 function defaultForm(): Omit<Designer, "id"> {
@@ -90,22 +109,12 @@ function defaultForm(): Omit<Designer, "id"> {
   };
 }
 
-// ── 전화번호 자동 하이픈 ─────────────────────────────────────────────────────
-
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-}
-
 // ── 디자이너 등록/수정 모달 ───────────────────────────────────────────────────
 
 interface DesignerFormModalProps {
-  designer: Designer | null;        // null = 신규
+  designer: Designer | null;
   salonId: string;
   services: ServiceMenu[];
-  canEdit: boolean;
   onClose: () => void;
   onSaved: (id: string) => void;
   user: { uid: string; name: string; role: UserRole };
@@ -115,7 +124,6 @@ function DesignerFormModal({
   designer,
   salonId,
   services,
-  canEdit,
   onClose,
   onSaved,
   user,
@@ -144,24 +152,19 @@ function DesignerFormModal({
   const [saving, setSaving] = useState(false);
   const [dayOffInput, setDayOffInput] = useState("");
 
-  // 이름 변경 시 profileInitial 자동 설정
   function handleNameChange(val: string) {
     setForm((f) => ({ ...f, name: val, profileInitial: val.trim()[0] ?? "" }));
   }
 
-  // 서비스 체크박스
   function toggleService(svc: ServiceMenu) {
     const hasId = form.serviceIds?.includes(svc.id);
     const newIds = hasId
       ? (form.serviceIds ?? []).filter((id) => id !== svc.id)
       : [...(form.serviceIds ?? []), svc.id];
-    const newNames = services
-      .filter((s) => newIds.includes(s.id))
-      .map((s) => s.name);
+    const newNames = services.filter((s) => newIds.includes(s.id)).map((s) => s.name);
     setForm((f) => ({ ...f, serviceIds: newIds, services: newNames }));
   }
 
-  // 근무 요일 토글
   function toggleWorkDay(dayIndex: number) {
     const days = form.workDays.includes(dayIndex)
       ? form.workDays.filter((d) => d !== dayIndex)
@@ -169,21 +172,15 @@ function DesignerFormModal({
     setForm((f) => ({ ...f, workDays: days }));
   }
 
-  // 휴무일 추가
   function addDayOff() {
-    if (!dayOffInput) return;
-    if (form.daysOff.includes(dayOffInput)) {
+    if (!dayOffInput || form.daysOff.includes(dayOffInput)) {
       setDayOffInput("");
       return;
     }
-    setForm((f) => ({
-      ...f,
-      daysOff: [...f.daysOff, dayOffInput].sort(),
-    }));
+    setForm((f) => ({ ...f, daysOff: [...f.daysOff, dayOffInput].sort() }));
     setDayOffInput("");
   }
 
-  // 유효성 검증
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "이름을 입력해주세요.";
@@ -191,17 +188,12 @@ function DesignerFormModal({
     if (!form.status) e.status = "근무상태를 선택해주세요.";
     if (!form.startTime) e.startTime = "출근 시간을 선택해주세요.";
     if (!form.endTime) e.endTime = "퇴근 시간을 선택해주세요.";
-    if (form.startTime >= form.endTime) e.endTime = "퇴근 시간은 출근 시간 이후여야 합니다.";
-    if (form.phoneMasked && form.phoneMasked.trim()) {
-      if (!/^010-[\d*]{4}-\d{4}$/.test(form.phoneMasked.trim())) {
-        e.phoneMasked = "010-0000-0000 또는 010-****-0000 형식으로 입력해주세요.";
-      }
-    }
+    if (form.startTime >= form.endTime)
+      e.endTime = "퇴근 시간은 출근 시간 이후여야 합니다.";
     return e;
   }
 
   async function handleSave() {
-    if (!canEdit) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -211,7 +203,6 @@ function DesignerFormModal({
     try {
       const role = ROLE_MAP[user.role];
       if (designer) {
-        // 수정
         await updateDesigner(salonId, designer.id, form, { uid: user.uid });
         logDesignerAccess(salonId, "designer_updated", designer.id, {
           uid: user.uid,
@@ -220,11 +211,7 @@ function DesignerFormModal({
         });
         onSaved(designer.id);
       } else {
-        // 신규
-        const newId = await addDesigner(salonId, form, {
-          uid: user.uid,
-          name: user.name,
-        });
+        const newId = await addDesigner(salonId, form, { uid: user.uid, name: user.name });
         logDesignerAccess(salonId, "designer_created", newId, {
           uid: user.uid,
           name: user.name,
@@ -233,8 +220,8 @@ function DesignerFormModal({
         onSaved(newId);
       }
     } catch (err) {
-      console.error(err);
-      setErrors({ _: "저장 중 오류가 발생했습니다." });
+      console.error("디자이너 저장 오류:", err);
+      setErrors({ _: "저장 중 오류가 발생했습니다. 다시 시도해주세요." });
     } finally {
       setSaving(false);
     }
@@ -254,7 +241,6 @@ function DesignerFormModal({
         className="bg-white rounded-2xl w-full max-w-lg shadow-xl my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <h3 className="font-bold text-lg text-gray-900">
             {designer ? "디자이너 수정" : "디자이너 추가"}
@@ -264,7 +250,6 @@ function DesignerFormModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {errors._ && (
             <div className="flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 rounded-xl px-4 py-3 text-sm">
@@ -305,23 +290,15 @@ function DesignerFormModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               연락처
-              <span className="ml-1 text-xs font-normal text-gray-400">(마스킹 저장 — phoneRaw 미저장)</span>
+              <span className="ml-1 text-xs font-normal text-gray-400">(마스킹 저장)</span>
             </label>
             <input
               value={form.phoneMasked ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  phoneMasked: formatPhone(e.target.value),
-                }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, phoneMasked: formatPhone(e.target.value) }))}
               placeholder="010-1234-5678"
               maxLength={13}
               className={inputCls("phoneMasked")}
             />
-            {errors.phoneMasked && (
-              <p className="text-xs text-red-500 mt-1">{errors.phoneMasked}</p>
-            )}
           </div>
 
           {/* 근무상태 */}
@@ -343,9 +320,7 @@ function DesignerFormModal({
                     type="button"
                     onClick={() => setForm((f) => ({ ...f, status: s }))}
                     className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      form.status === s
-                        ? activeColors[s]
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      form.status === s ? activeColors[s] : "border-gray-200 text-gray-600 hover:border-gray-300"
                     }`}
                   >
                     {labels[s]}
@@ -418,9 +393,7 @@ function DesignerFormModal({
                 onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
                 className={inputCls("startTime")}
               >
-                {TIME_SLOTS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {TIME_SLOTS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
               {errors.startTime && <p className="text-xs text-red-500 mt-1">{errors.startTime}</p>}
             </div>
@@ -433,9 +406,7 @@ function DesignerFormModal({
                 onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
                 className={inputCls("endTime")}
               >
-                {TIME_SLOTS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {TIME_SLOTS.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
               {errors.endTime && <p className="text-xs text-red-500 mt-1">{errors.endTime}</p>}
             </div>
@@ -482,7 +453,7 @@ function DesignerFormModal({
               <button
                 type="button"
                 onClick={addDayOff}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
               >
                 추가
               </button>
@@ -497,13 +468,8 @@ function DesignerFormModal({
                     {d}
                     <button
                       type="button"
-                      onClick={() =>
-                        setForm((f) => ({
-                          ...f,
-                          daysOff: f.daysOff.filter((x) => x !== d),
-                        }))
-                      }
-                      className="hover:text-orange-900 ml-0.5"
+                      onClick={() => setForm((f) => ({ ...f, daysOff: f.daysOff.filter((x) => x !== d) }))}
+                      className="hover:text-orange-900"
                     >
                       <X size={11} />
                     </button>
@@ -537,27 +503,20 @@ function DesignerFormModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50"
           >
             취소
           </button>
-          {canEdit ? (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
-            >
-              {saving ? <><Loader2 size={14} className="animate-spin" />저장 중...</> : "저장"}
-            </button>
-          ) : (
-            <div className="flex-1 bg-gray-100 text-gray-400 py-2.5 rounded-xl text-sm font-medium text-center">
-              권한이 없습니다
-            </div>
-          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {saving ? <><Loader2 size={14} className="animate-spin" />저장 중...</> : "저장"}
+          </button>
         </div>
       </div>
     </div>
@@ -589,11 +548,10 @@ function DeactivateConfirmModal({
             <p className="text-xs text-gray-500">{designer.name} · {designer.roleTitle}</p>
           </div>
         </div>
-        <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+        <p className="text-sm text-gray-600 mb-1.5 leading-relaxed">
           디자이너를 비활성화하시겠습니까?
-          <br />
-          <span className="text-gray-400 text-xs">기존 예약 기록은 유지됩니다.</span>
         </p>
+        <p className="text-xs text-gray-400 mb-6">기존 예약 기록은 유지됩니다.</p>
         <div className="flex gap-3">
           <button
             onClick={onClose}
@@ -631,20 +589,23 @@ function StatusDropdown({
   onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [changing, setChanging] = useState(false);
 
   async function handleChange(status: Designer["status"]) {
     if (!canEdit) return;
     setOpen(false);
-    setLoading(true);
-    await updateDesignerStatus(salonId, designer.id, status, { uid: user.uid });
-    logDesignerAccess(salonId, "designer_status_changed", designer.id, {
-      uid: user.uid,
-      name: user.name,
-      role: ROLE_MAP[user.role],
-    });
-    setLoading(false);
-    onChange();
+    setChanging(true);
+    try {
+      await updateDesignerStatus(salonId, designer.id, status, { uid: user.uid });
+      logDesignerAccess(salonId, "designer_status_changed", designer.id, {
+        uid: user.uid,
+        name: user.name,
+        role: ROLE_MAP[user.role],
+      });
+      onChange();
+    } finally {
+      setChanging(false);
+    }
   }
 
   if (!canEdit) return <StatusBadge status={designer.status} />;
@@ -653,33 +614,36 @@ function StatusDropdown({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        disabled={loading}
+        disabled={changing}
         className="flex items-center gap-1 focus:outline-none"
       >
-        {loading ? (
-          <Loader2 size={12} className="animate-spin text-gray-400" />
-        ) : (
-          <StatusBadge status={designer.status} />
-        )}
+        {changing
+          ? <Loader2 size={12} className="animate-spin text-gray-400" />
+          : <StatusBadge status={designer.status} />
+        }
         <ChevronDown size={12} className="text-gray-400 ml-0.5" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden min-w-[110px]">
-          {(["active", "off", "inactive"] as const).map((s) => {
-            const labels = { active: "근무 중", off: "휴무", inactive: "비활성" };
-            return (
-              <button
-                key={s}
-                onClick={() => handleChange(s)}
-                className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
-                  designer.status === s ? "font-semibold text-blue-600" : "text-gray-700"
-                }`}
-              >
-                {labels[s]}
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {/* 오버레이 닫기 */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden min-w-[110px]">
+            {(["active", "off", "inactive"] as const).map((s) => {
+              const labels = { active: "근무 중", off: "휴무", inactive: "비활성" };
+              return (
+                <button
+                  key={s}
+                  onClick={() => handleChange(s)}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
+                    designer.status === s ? "font-semibold text-blue-600" : "text-gray-700"
+                  }`}
+                >
+                  {labels[s]}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
@@ -688,27 +652,36 @@ function StatusDropdown({
 // ── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function DesignersPage() {
-  const { userData } = useAuth();
-  const salonId = userData?.salonId ?? "salon1";
-  const userRole = (userData?.role ?? "designer") as UserRole;
-  const userName = userData?.name ?? "";
+  const { userData, loading: authLoading } = useAuth();
+
+  // ── 권한 판정 (auth 로딩 완료 후) ──────────────────────────────────────────
+  // authLoading 중에는 role을 결정하지 않음
+  const userRole = userData?.role as UserRole | undefined;
+  const salonId = userData?.salonId ?? "";
   const userId = userData?.uid ?? "";
-  const user = { uid: userId, name: userName, role: userRole };
+  const userName = userData?.name ?? "";
 
-  const isOwner = userRole === "owner";
-  const isManager = userRole === "manager";
-  const canAdd = isOwner || isManager;
-  const canEdit = isOwner || isManager;
-  const canDeactivate = isOwner;
+  // 권한 함수 통일
+  const canManageDesigners = userRole === "owner" || userRole === "manager";
+  const canDeactivateDesigner = userRole === "owner";
+  const canReadDesigners =
+    userRole === "owner" || userRole === "manager" || userRole === "designer";
 
+  const user = {
+    uid: userId,
+    name: userName,
+    role: (userRole ?? "designer") as UserRole,
+  };
+
+  // ── 데이터 상태 ───────────────────────────────────────────────────────────
   const [designers, setDesigners] = useState<Designer[]>([]);
   const [services, setServices] = useState<ServiceMenu[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   // 모달 상태
   const [modalDesigner, setModalDesigner] = useState<Designer | null | undefined>(undefined);
-  // undefined = 닫힘, null = 신규, Designer = 수정
   const [deactivateTarget, setDeactivateTarget] = useState<Designer | null>(null);
   const [deactivating, setDeactivating] = useState(false);
 
@@ -720,24 +693,49 @@ export default function DesignersPage() {
     setTimeout(() => setToast(null), 2500);
   }
 
-  async function loadDesigners() {
-    const list = await getDesigners(salonId);
-    setDesigners(list);
-  }
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      getDesigners(salonId),
-      getServices(salonId),
-      getReservations(salonId, DEMO_DATE),
-    ]).then(([d, s, r]) => {
+  // ── 데이터 로드 (salonId 확정 후에만 실행) ───────────────────────────────
+  async function loadData() {
+    if (!salonId) return;
+    setDataLoading(true);
+    setDataError(null);
+    try {
+      const [d, s, r] = await Promise.all([
+        getDesigners(salonId),
+        getServices(salonId),
+        getReservations(salonId, DEMO_DATE),
+      ]);
       setDesigners(d);
       setServices(s);
       setReservations(r);
-      setLoading(false);
-    });
-  }, [salonId]);
+    } catch (err) {
+      console.error("디자이너 데이터 로드 오류:", err);
+      setDataError(
+        err instanceof Error
+          ? err.message
+          : "데이터를 불러오는 중 오류가 발생했습니다."
+      );
+    } finally {
+      setDataLoading(false);
+    }
+  }
+
+  async function loadDesigners() {
+    if (!salonId) return;
+    try {
+      const d = await getDesigners(salonId);
+      setDesigners(d);
+    } catch (err) {
+      console.error("디자이너 목록 갱신 오류:", err);
+    }
+  }
+
+  // auth 로딩 완료 후 salonId가 확정되면 데이터 로드
+  useEffect(() => {
+    if (authLoading) return;        // auth 아직 로딩 중이면 대기
+    if (!salonId) return;           // salonId 없으면 대기
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, salonId]);
 
   async function handleSaved(id: string) {
     setModalDesigner(undefined);
@@ -748,24 +746,78 @@ export default function DesignersPage() {
   async function handleDeactivate() {
     if (!deactivateTarget) return;
     setDeactivating(true);
-    await deactivateDesigner(salonId, deactivateTarget.id, { uid: userId });
-    logDesignerAccess(salonId, "designer_deactivated", deactivateTarget.id, {
-      uid: userId,
-      name: userName,
-      role: ROLE_MAP[userRole],
-    });
-    setDeactivating(false);
-    setDeactivateTarget(null);
-    await loadDesigners();
-    showToast("비활성화 처리되었습니다.");
+    try {
+      await deactivateDesigner(salonId, deactivateTarget.id, { uid: userId });
+      logDesignerAccess(salonId, "designer_deactivated", deactivateTarget.id, {
+        uid: userId,
+        name: userName,
+        role: ROLE_MAP[user.role],
+      });
+      await loadDesigners();
+      showToast("비활성화 처리되었습니다.");
+    } finally {
+      setDeactivating(false);
+      setDeactivateTarget(null);
+    }
   }
 
-  // 활성/휴무 디자이너만 카드에 표시 (비활성은 맨 뒤)
   const visibleDesigners = [
     ...designers.filter((d) => d.status !== "inactive"),
     ...designers.filter((d) => d.status === "inactive"),
   ];
 
+  // ── 1단계: auth 로딩 중 ──────────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <AdminLayout title="디자이너 관리" description="">
+        <div className="flex flex-col items-center justify-center py-24 gap-3 text-gray-400">
+          <Loader2 size={28} className="animate-spin text-blue-500" />
+          <p className="text-sm">권한 확인 중...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // ── 2단계: 로그인 안 됨 ──────────────────────────────────────────────────
+  if (!userData) {
+    return (
+      <AdminLayout title="디자이너 관리" description="">
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <ShieldOff size={36} className="text-gray-400" />
+          <p className="text-sm text-gray-500">로그인이 필요합니다.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // ── 3단계: salonId 없음 ──────────────────────────────────────────────────
+  if (!salonId) {
+    return (
+      <AdminLayout title="디자이너 관리" description="">
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <AlertCircle size={36} className="text-orange-400" />
+          <p className="text-sm font-medium text-gray-700">매장 정보가 연결되지 않았습니다.</p>
+          <p className="text-xs text-gray-500 font-mono">
+            users/{userId}.salonId 를 확인해주세요.
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // ── 4단계: 권한 없음 ────────────────────────────────────────────────────
+  if (!canReadDesigners) {
+    return (
+      <AdminLayout title="디자이너 관리" description="">
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <ShieldOff size={36} className="text-red-400" />
+          <p className="text-sm text-gray-600">접근 권한이 없습니다.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // ── 정상 렌더 ───────────────────────────────────────────────────────────
   return (
     <AdminLayout
       title="디자이너 관리"
@@ -774,7 +826,7 @@ export default function DesignersPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm text-white transition-all ${
+          className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm text-white ${
             toast.ok ? "bg-green-500" : "bg-red-500"
           }`}
         >
@@ -783,20 +835,18 @@ export default function DesignersPage() {
         </div>
       )}
 
-      {/* 등록/수정 모달 */}
+      {/* 모달 */}
       {modalDesigner !== undefined && (
         <DesignerFormModal
           designer={modalDesigner}
           salonId={salonId}
           services={services}
-          canEdit={canEdit}
           onClose={() => setModalDesigner(undefined)}
           onSaved={handleSaved}
           user={user}
         />
       )}
 
-      {/* 비활성화 확인 모달 */}
       {deactivateTarget && (
         <DeactivateConfirmModal
           designer={deactivateTarget}
@@ -807,12 +857,21 @@ export default function DesignersPage() {
       )}
 
       <div className="space-y-6">
-        {/* Header row */}
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            전체 {designers.length}명 · 근무 중 {designers.filter((d) => d.status === "active").length}명
-          </p>
-          {canAdd ? (
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-500">
+              전체 {designers.length}명 · 근무 중{" "}
+              {designers.filter((d) => d.status === "active").length}명
+            </p>
+            {/* 현재 권한 표시 */}
+            <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
+              {ROLE_LABEL[userRole ?? "designer"]} 권한
+            </span>
+          </div>
+
+          {/* 권한별 버튼 */}
+          {canManageDesigners ? (
             <button
               onClick={() => setModalDesigner(null)}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -820,21 +879,39 @@ export default function DesignersPage() {
               <Plus size={16} />디자이너 추가
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-gray-400 border border-gray-200 px-4 py-2 rounded-lg">
+            <div className="flex items-center gap-2 text-xs text-gray-400 border border-gray-200 px-4 py-2 rounded-lg bg-gray-50">
+              <ShieldOff size={13} />
               디자이너 관리 (읽기 전용)
             </div>
           )}
         </div>
 
-        {/* Loading */}
-        {loading && (
+        {/* 에러 메시지 */}
+        {dataError && (
+          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-red-700">데이터를 불러오지 못했습니다</p>
+              <p className="text-xs text-red-500 mt-0.5">{dataError}</p>
+            </div>
+            <button
+              onClick={loadData}
+              className="ml-auto text-xs text-red-600 border border-red-300 px-3 py-1.5 rounded-lg hover:bg-red-100 flex-shrink-0"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {/* 로딩 */}
+        {dataLoading && (
           <div className="flex items-center justify-center py-16">
             <Loader2 size={24} className="animate-spin text-blue-500" />
           </div>
         )}
 
-        {/* Designer cards */}
-        {!loading && (
+        {/* 디자이너 카드 */}
+        {!dataLoading && !dataError && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {visibleDesigners.map((d) => {
               const todayR = reservations.filter((r) => r.designerId === d.id);
@@ -843,11 +920,10 @@ export default function DesignersPage() {
               return (
                 <div
                   key={d.id}
-                  className={`bg-white rounded-xl p-5 shadow-sm border transition-opacity ${
-                    isInactive ? "border-gray-100 opacity-50" : "border-gray-100"
+                  className={`bg-white rounded-xl p-5 shadow-sm border border-gray-100 transition-opacity ${
+                    isInactive ? "opacity-50" : ""
                   }`}
                 >
-                  {/* Card header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div
@@ -861,7 +937,7 @@ export default function DesignersPage() {
                         <p className="text-xs text-gray-500">{d.roleTitle}</p>
                       </div>
                     </div>
-                    {canEdit && !isInactive && (
+                    {canManageDesigners && !isInactive && (
                       <button
                         onClick={() => setModalDesigner(d)}
                         className="text-gray-400 hover:text-gray-700 p-1"
@@ -871,19 +947,17 @@ export default function DesignersPage() {
                     )}
                   </div>
 
-                  {/* Status + 오늘 예약 */}
                   <div className="flex items-center gap-2 mb-3">
                     <StatusDropdown
                       designer={d}
                       salonId={salonId}
                       user={user}
-                      canEdit={canEdit && !isInactive}
+                      canEdit={canManageDesigners && !isInactive}
                       onChange={loadDesigners}
                     />
                     <span className="text-xs text-gray-500">오늘 {todayR.length}건</span>
                   </div>
 
-                  {/* Work days */}
                   <div className="flex gap-1 mb-3">
                     {WEEK_LABELS.map((day, i) => (
                       <div
@@ -899,20 +973,15 @@ export default function DesignersPage() {
                     ))}
                   </div>
 
-                  {/* Work time */}
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
                     <Clock size={12} />
                     <span>{d.startTime} ~ {d.endTime}</span>
                   </div>
 
-                  {/* Services */}
                   <div className="mb-2">
                     <div className="flex flex-wrap gap-1">
                       {d.services.slice(0, 3).map((s) => (
-                        <span
-                          key={s}
-                          className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full"
-                        >
+                        <span key={s} className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">
                           {s}
                         </span>
                       ))}
@@ -927,7 +996,6 @@ export default function DesignersPage() {
                     </div>
                   </div>
 
-                  {/* Days off */}
                   {d.daysOff.length > 0 && (
                     <div className="flex items-center gap-1.5 text-xs text-orange-500 mb-2">
                       <CalendarOff size={12} />
@@ -938,17 +1006,15 @@ export default function DesignersPage() {
                     </div>
                   )}
 
-                  {/* Memo */}
                   {d.memo && (
                     <p className="text-[10px] text-gray-400 italic truncate mb-2">{d.memo}</p>
                   )}
 
-                  {/* Footer */}
                   <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
                       누적 {d.totalReservations ?? 0}건 · {d.joinedAt ?? "-"} 입사
                     </span>
-                    {canDeactivate && !isInactive && (
+                    {canDeactivateDesigner && !isInactive && (
                       <button
                         onClick={() => setDeactivateTarget(d)}
                         className="text-[10px] text-red-400 hover:text-red-600 transition-colors"
@@ -964,34 +1030,33 @@ export default function DesignersPage() {
               );
             })}
 
-            {/* Empty state */}
+            {/* 빈 상태 */}
             {visibleDesigners.length === 0 && (
-              <div className="col-span-4 text-center py-16 text-gray-400">
-                <p className="text-sm mb-3">등록된 디자이너가 없습니다.</p>
-                {canAdd && (
+              <div className="col-span-4 text-center py-16">
+                <p className="text-sm text-gray-400 mb-3">등록된 디자이너가 없습니다.</p>
+                {canManageDesigners ? (
                   <button
                     onClick={() => setModalDesigner(null)}
                     className="text-sm text-blue-600 hover:underline"
                   >
                     디자이너 추가하기
                   </button>
+                ) : (
+                  <p className="text-xs text-gray-400">관리자에게 디자이너 등록을 요청하세요.</p>
                 )}
               </div>
             )}
           </div>
         )}
 
-        {/* Weekly schedule */}
-        {!loading && designers.filter(d => d.status !== "inactive").length > 0 && (
+        {/* 주간 근무시간표 */}
+        {!dataLoading && !dataError && designers.filter((d) => d.status !== "inactive").length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-900">주간 근무시간표</h2>
             </div>
             <div className="overflow-x-auto">
-              <table
-                className="w-full text-xs"
-                style={{ minWidth: 600 }}
-              >
+              <table className="w-full text-xs" style={{ minWidth: 600 }}>
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-gray-500 font-medium w-20">시간</th>
@@ -1029,9 +1094,7 @@ export default function DesignersPage() {
                             const isWorking =
                               d.status === "active" && hour >= start && hour < end;
                             const res = reservations.find(
-                              (r) =>
-                                r.designerId === d.id &&
-                                parseInt(r.time.split(":")[0]) === hour
+                              (r) => r.designerId === d.id && parseInt(r.time.split(":")[0]) === hour
                             );
                             return (
                               <td key={d.id} className="px-2 py-1.5 text-center">
