@@ -143,3 +143,40 @@ npm run build    # 프로덕션 빌드
 npm run lint     # ESLint 검사
 firebase deploy --only firestore:rules  # 보안규칙만 배포
 ```
+
+---
+
+## AI 협업 하네스
+
+Claude Code와 ChatGPT가 같은 기준으로 작업·검수·인수인계하는 문서 체계입니다.
+
+### 문서 구조
+
+| 파일 | 설명 | 업데이트 주체 |
+|------|------|-------------|
+| `AI_HANDOFF.md` | Phase 작업 완료 시 인수인계 요약 | Claude (작업마다) |
+| `docs/AI_WORKFLOW.md` | 협업 규칙 및 역할 정의 | 필요 시 |
+| `docs/QA_CHECKLIST.md` | 기능별 검수 체크리스트 | Claude (기능 추가 시) |
+| `docs/FEATURE_STATUS.md` | 기능별 완료 상태표 | Claude (작업마다) |
+| `docs/KNOWN_ISSUES.md` | 알려진 이슈 및 후순위 항목 | Claude / ChatGPT |
+
+### 협업 방법
+
+**Claude 작업 후:**
+1. `AI_HANDOFF.md` 업데이트
+2. `docs/FEATURE_STATUS.md` 상태 갱신
+3. `npm run build` 통과 확인
+4. 사용자 머지 후 ChatGPT 검수 요청
+
+**ChatGPT 검수 시:**
+- `AI_HANDOFF.md` + `docs/QA_CHECKLIST.md` + `docs/FEATURE_STATUS.md` 함께 확인
+- 스크린샷 첨부 또는 GitHub 코드 링크로 검수
+
+### 보안 원칙
+
+> 아래 정보는 절대 문서에 기록하지 않습니다:
+> - Firebase API Key, Secret
+> - SMS/알림톡 API Key
+> - 사용자 비밀번호
+> - `customerPrivate.phoneRaw` (고객 원본 연락처)
+> - 실제 사용자 UID
