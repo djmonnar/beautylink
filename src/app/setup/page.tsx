@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { seedFirestore, checkSeedStatus } from "@/lib/seedData";
+
 import { CheckCircle, Database, Loader2, AlertCircle, ArrowRight, ShieldOff } from "lucide-react";
 import Image from "next/image";
 
 export default function SetupPage() {
-  const { user, userData, loading, firebaseReady } = useAuth();
+  const { user, userData, loading, firebaseReady, refreshUserData } = useAuth();
   const router = useRouter();
 
   const [seeding, setSeeding] = useState(false);
@@ -84,7 +85,11 @@ export default function SetupPage() {
     const res = await seedFirestore(user.uid, user.email ?? "", name);
     setResult(res);
     setSeeding(false);
-    if (res.ok) setAlreadySeeded(true);
+    if (res.ok) {
+      setAlreadySeeded(true);
+      // users/{uid} 문서가 새로 생성됐으므로 AuthContext userData를 즉시 갱신
+      await refreshUserData();
+    }
   }
 
   return (

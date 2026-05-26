@@ -32,19 +32,9 @@ export async function seedFirestore(
   const details: string[] = [];
 
   try {
-    // ── 1. Salon 문서 ─────────────────────────────────────────
-    await setDoc(doc(db, "salons", SALON_ID), {
-      id: SALON_ID,
-      name: "뷰티링크 헤어 강남점",
-      phone: "02-1234-5678",
-      address: "서울시 강남구 테헤란로 123",
-      plan: "pro",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    details.push("✅ 매장 정보 생성");
-
-    // ── 2. 사용자(owner) 문서 ────────────────────────────────
+    // ── 1. 사용자(owner) 문서 — 반드시 가장 먼저 생성 ─────────────────────────
+    // Firestore Rules의 me() 함수가 이 문서를 읽어 권한을 판단하므로
+    // salons 문서 생성보다 앞에 있어야 "Missing or insufficient permissions" 방지
     await setDoc(doc(db, "users", uid), {
       uid,
       email: userEmail,
@@ -57,45 +47,73 @@ export async function seedFirestore(
     });
     details.push("✅ 관리자 계정 문서 생성");
 
-    // ── 3. 디자이너 ──────────────────────────────────────────
+    // ── 2. Salon 문서 ─────────────────────────────────────────────────────────
+    await setDoc(doc(db, "salons", SALON_ID), {
+      id: SALON_ID,
+      name: "뷰티링크 헤어 강남점",
+      phone: "02-1234-5678",
+      address: "서울시 강남구 테헤란로 123",
+      plan: "pro",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    details.push("✅ 매장 정보 생성");
+
+    // ── 3. 디자이너 ──────────────────────────────────────────────────────────
     {
       const batch = writeBatch(db);
       for (const d of MOCK_DESIGNERS) {
         const ref = doc(collection(db, `salons/${SALON_ID}/designers`), d.id);
-        batch.set(ref, { ...d, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        batch.set(ref, {
+          ...d,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       }
       await batch.commit();
       details.push(`✅ 디자이너 ${MOCK_DESIGNERS.length}명 생성`);
     }
 
-    // ── 4. 시술 메뉴 ─────────────────────────────────────────
+    // ── 4. 시술 메뉴 ─────────────────────────────────────────────────────────
     {
       const batch = writeBatch(db);
       for (const s of MOCK_SERVICES) {
         const ref = doc(collection(db, `salons/${SALON_ID}/services`), s.id);
-        batch.set(ref, { ...s, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        batch.set(ref, {
+          ...s,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       }
       await batch.commit();
       details.push(`✅ 시술 메뉴 ${MOCK_SERVICES.length}개 생성`);
     }
 
-    // ── 5. 고객 ──────────────────────────────────────────────
+    // ── 5. 고객 ──────────────────────────────────────────────────────────────
     {
       const batch = writeBatch(db);
       for (const c of MOCK_CUSTOMERS) {
         const ref = doc(collection(db, `salons/${SALON_ID}/customers`), c.id);
-        batch.set(ref, { ...c, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        batch.set(ref, {
+          ...c,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       }
       await batch.commit();
       details.push(`✅ 고객 ${MOCK_CUSTOMERS.length}명 생성`);
     }
 
-    // ── 6. 예약 ──────────────────────────────────────────────
+    // ── 6. 예약 ──────────────────────────────────────────────────────────────
     {
       const batch = writeBatch(db);
       for (const r of MOCK_RESERVATIONS) {
         const ref = doc(collection(db, `salons/${SALON_ID}/reservations`), r.id);
-        batch.set(ref, { ...r, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        batch.set(ref, {
+          ...r,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       }
       await batch.commit();
       details.push(`✅ 예약 ${MOCK_RESERVATIONS.length}건 생성`);
