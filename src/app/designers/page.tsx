@@ -652,14 +652,15 @@ function StatusDropdown({
 // ── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function DesignersPage() {
-  const { userData, loading: authLoading } = useAuth();
+  // authUser = Firebase Auth 객체 (로그인 여부 판단용)
+  // userData = Firestore users/{uid} 문서 (역할·salonId 포함)
+  const { user: authUser, userData, loading: authLoading } = useAuth();
 
   // ── 권한 판정 (auth 로딩 완료 후) ──────────────────────────────────────────
-  // authLoading 중에는 role을 결정하지 않음
   const userRole = userData?.role as UserRole | undefined;
   const salonId = userData?.salonId ?? "";
-  const userId = userData?.uid ?? "";
-  const userName = userData?.name ?? "";
+  const userId = userData?.uid ?? authUser?.uid ?? "";
+  const userName = userData?.name ?? authUser?.email?.split("@")[0] ?? "";
 
   // 권한 함수 통일
   const canManageDesigners = userRole === "owner" || userRole === "manager";
@@ -667,7 +668,8 @@ export default function DesignersPage() {
   const canReadDesigners =
     userRole === "owner" || userRole === "manager" || userRole === "designer";
 
-  const user = {
+  // accessLog / save 용 user 객체 (Auth와 충돌 방지: actingUser)
+  const actingUser = {
     uid: userId,
     name: userName,
     role: (userRole ?? "designer") as UserRole,
@@ -751,7 +753,7 @@ export default function DesignersPage() {
       logDesignerAccess(salonId, "designer_deactivated", deactivateTarget.id, {
         uid: userId,
         name: userName,
-        role: ROLE_MAP[user.role],
+        role: ROLE_MAP[actingUser.role],
       });
       await loadDesigners();
       showToast("비활성화 처리되었습니다.");
@@ -778,19 +780,40 @@ export default function DesignersPage() {
     );
   }
 
-  // ── 2단계: 로그인 안 됨 ──────────────────────────────────────────────────
+  // ── 2단계: Firebase Auth 로그인 안 됨 (AdminLayout이 이미 처리하지만 방어용) ──
+  if (!authUser) {
+    return null; // AdminLayout → /login redirect 처리
+  }
+
+  // ── 3단계: Firestore users/{uid} 문서 없음 → 초기 세팅 필요 ────────────────
   if (!userData) {
     return (
       <AdminLayout title="디자이너 관리" description="">
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <ShieldOff size={36} className="text-gray-400" />
-          <p className="text-sm text-gray-500">로그인이 필요합니다.</p>
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <AlertCircle size={36} className="text-orange-400" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-800 mb-1">
+              사용자 정보를 불러올 수 없습니다.
+            </p>
+            <p className="text-xs text-gray-500 mb-1">
+              Firestore <code className="bg-gray-100 px-1 rounded">users/{authUser.uid}</code> 문서가 없습니다.
+            </p>
+            <p className="text-xs text-gray-400">
+              /setup 페이지에서 초기 세팅을 먼저 실행해주세요.
+            </p>
+          </div>
+          <a
+            href="/setup"
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            /setup 초기 세팅하기
+          </a>
         </div>
       </AdminLayout>
     );
   }
 
-  // ── 3단계: salonId 없음 ──────────────────────────────────────────────────
+  // ── 4단계: salonId 없음 ──────────────────────────────────────────────────
   if (!salonId) {
     return (
       <AdminLayout title="디자이너 관리" description="">
@@ -800,12 +823,15 @@ export default function DesignersPage() {
           <p className="text-xs text-gray-500 font-mono">
             users/{userId}.salonId 를 확인해주세요.
           </p>
+          <a href="/setup" className="text-sm text-blue-600 hover:underline mt-1">
+            /setup 에서 다시 세팅하기
+          </a>
         </div>
       </AdminLayout>
     );
   }
 
-  // ── 4단계: 권한 없음 ────────────────────────────────────────────────────
+  // ── 5단계: 권한 없음 ────────────────────────────────────────────────────
   if (!canReadDesigners) {
     return (
       <AdminLayout title="디자이너 관리" description="">
@@ -843,7 +869,7 @@ export default function DesignersPage() {
           services={services}
           onClose={() => setModalDesigner(undefined)}
           onSaved={handleSaved}
-          user={user}
+          user={actingUser}
         />
       )}
 
@@ -951,7 +977,7 @@ export default function DesignersPage() {
                     <StatusDropdown
                       designer={d}
                       salonId={salonId}
-                      user={user}
+                      user={actingUser}
                       canEdit={canManageDesigners && !isInactive}
                       onChange={loadDesigners}
                     />
