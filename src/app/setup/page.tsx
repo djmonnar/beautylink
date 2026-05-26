@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { seedFirestore, checkSeedStatus } from "@/lib/seedData";
-import { CheckCircle, Database, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, Database, Loader2, AlertCircle, ArrowRight, ShieldOff } from "lucide-react";
 import Image from "next/image";
 
 export default function SetupPage() {
@@ -51,6 +51,26 @@ export default function SetupPage() {
             className="mt-4 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             로그인하기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // userData가 있고 owner가 아니면 접근 차단
+  // (userData가 null이면 최초 세팅 중인 owner로 간주해 통과)
+  if (userData && userData.role !== "owner") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <ShieldOff size={40} className="text-red-500 mx-auto mb-3" />
+          <p className="text-gray-700 font-medium">접근 권한이 없습니다.</p>
+          <p className="text-sm text-gray-500 mt-1">이 페이지는 원장(owner)만 접근할 수 있습니다.</p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="mt-4 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            대시보드로 돌아가기
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   query,
   orderBy,
@@ -14,8 +15,9 @@ import {
 } from "firebase/firestore";
 
 const col = (salonId: string) => collection(db!, `salons/${salonId}/customers`);
+// 고객 민감정보: salons/{salonId}/customerPrivate/{customerId}
 const privateDoc = (salonId: string, customerId: string) =>
-  doc(db!, `salons/${salonId}/customers/${customerId}/private/info`);
+  doc(db!, `salons/${salonId}/customerPrivate/${customerId}`);
 
 // ── Read ───────────────────────────────────────────────────────────────────
 
@@ -74,7 +76,8 @@ export async function addCustomer(
   });
 
   if (privateData) {
-    await updateDoc(privateDoc(salonId, ref.id), {
+    // setDoc: 문서가 없어도 생성 (updateDoc은 기존 문서가 있어야 해서 버그)
+    await setDoc(privateDoc(salonId, ref.id), {
       ...privateData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -110,8 +113,9 @@ export async function saveCustomerPrivate(
 ): Promise<void> {
   if (!db) return;
 
-  await updateDoc(privateDoc(salonId, customerId), {
+  // merge: true → 기존 필드 유지하면서 부분 업데이트
+  await setDoc(privateDoc(salonId, customerId), {
     ...data,
     updatedAt: serverTimestamp(),
-  });
+  }, { merge: true });
 }

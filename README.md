@@ -1,84 +1,145 @@
 # 뷰티링크 (BeautyLink)
 
-미용실·네일샵·뷰티샵 전용 예약관리 CRM MVP
+미용실 예약관리 CRM — 네이버예약·전화예약·방문예약을 한 화면에서 통합 관리
 
-## 실행 방법
+**Stack**: Next.js 16 · TypeScript · Tailwind CSS · Firebase (Auth + Firestore) · Vercel
+
+---
+
+## 빠른 시작
+
+### 1. 의존성 설치
 
 ```bash
-# 패키지 설치
 npm install
-
-# 개발 서버 실행
-npm run dev
-
-# 빌드
-npm run build
-
-# 빌드 후 실행
-npm start
 ```
 
-개발 서버: http://localhost:3000
+### 2. Firebase 환경변수 설정
 
-## 페이지 구조
+프로젝트 루트에 `.env.local` 파일 생성:
 
-| 경로 | 페이지 | 설명 |
-|------|--------|------|
-| `/` | 랜딩페이지 | 서비스 소개, 네이버 제휴 제안서용 |
-| `/dashboard` | 대시보드 | 오늘의 매장 운영 현황 |
-| `/calendar` | 예약 통합 캘린더 | 디자이너별 예약 시간표 |
-| `/reservations/new` | 예약 등록 | 전화/방문 예약 직접 등록 |
-| `/customers` | 고객관리 CRM | 고객 방문이력·시술메모 관리 |
-| `/designers` | 디자이너 관리 | 근무시간·휴무·담당시술 관리 |
-| `/services` | 시술 메뉴 관리 | 가격·소요시간·담당자 관리 |
-| `/integrations/naver` | 네이버예약 연동 준비 | API 승인 전 설정 화면 |
-| `/messages` | 문자·알림톡·노쇼 관리 | 알림 템플릿·발송이력·노쇼 관리 |
-| `/security` | 보안 및 권한 관리 | 개인정보 보호·역할별 권한 |
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+```
 
-## 주요 기능
+> Firebase Console → 프로젝트 설정 → 앱 → SDK 구성에서 복사
 
-- **예약 통합 캘린더**: 디자이너별 시간표, 예약 출처 색상 구분 (네이버/전화/방문/카카오)
-- **고객관리 CRM**: 방문이력 타임라인, 시술 메모, 재방문 주기 관리
-- **디자이너 관리**: 근무시간·휴무·담당시술, 주간 스케줄표
-- **시술 메뉴 관리**: 카테고리별 필터, 사용 여부 토글
-- **네이버예약 연동 준비**: 디자이너/메뉴 매칭, 동기화 상태 90%
-- **문자·알림톡**: 4종 템플릿, 노쇼 관리, 취소 사유 분석
-- **보안 관리**: 연락처 마스킹, 역할별 권한 표, 접근 로그
+### 3. 개발 서버 실행
 
-## 데이터 저장
-
-- 초기 데이터: `src/data/mock.ts`에 정의된 mock data
-- 예약 등록/고객 추가/메뉴 수정: localStorage에 저장됨
-- 새로고침해도 데이터 유지
-- 대시보드 우상단 "데모 데이터 초기화" 버튼으로 리셋 가능
-
-## 아직 실제 연동되지 않은 기능
-
-- **네이버예약 API**: API 제휴 검토 중, 승인 후 연동 예정
-- **문자/카카오 알림 실제 발송**: mock 발송 처리 (토스트 메시지만 표시)
-- **실시간 동기화**: localStorage 기반 단방향 저장
-- **회원가입/로그인**: 데모 버전 (김지연 원장으로 고정)
-
-## 네이버예약 API 승인 후 연결 포인트
-
-1. `src/app/integrations/naver/page.tsx` — API 키 입력 및 연결 확인 로직
-2. `src/data/mock.ts` — `getReservations()` 함수를 실제 API 호출로 교체
-3. `src/app/calendar/page.tsx` — 실시간 예약 데이터 fetch
-4. `src/app/dashboard/page.tsx` — 실시간 통계 연동
-5. `src/app/reservations/new/page.tsx` — 네이버예약 소스 실제 연동
-
-## 기술 스택
-
-- **Next.js 15** (App Router)
-- **TypeScript**
-- **Tailwind CSS**
-- **lucide-react** (아이콘)
-- **recharts** (차트)
-- **localStorage** (데이터 저장)
-
-## 배포
-
-Vercel에 바로 배포 가능:
 ```bash
-vercel deploy
+npm run dev
+```
+
+---
+
+## Firebase 초기 설정
+
+### Authentication
+
+Firebase Console → Authentication → Sign-in method → **이메일/비밀번호** 활성화
+
+### Firestore Database
+
+Firebase Console → Firestore Database → 데이터베이스 만들기 (프로덕션 모드)
+
+### 초기 데이터 세팅 (`/setup`)
+
+1. Firebase Authentication에서 원장 계정으로 회원가입 또는 생성
+2. 앱에서 해당 계정으로 로그인
+3. `/setup` 페이지 접속 → **Firestore 초기 세팅 시작** 클릭
+4. 성공 후 대시보드로 이동
+
+> `/setup`은 **owner 역할의 계정만** 접근 가능합니다.
+
+---
+
+## Firestore 보안 규칙 적용
+
+### Firebase CLI로 배포 (권장)
+
+```bash
+# Firebase CLI 설치 (최초 1회)
+npm install -g firebase-tools
+
+# Firebase 로그인
+firebase login
+
+# 프로젝트 연결 (최초 1회)
+firebase use beautylink-55cbb
+
+# 규칙만 배포
+firebase deploy --only firestore:rules
+```
+
+### Firebase Console에서 직접 적용
+
+1. [Firebase Console](https://console.firebase.google.com) → 프로젝트 선택
+2. 왼쪽 메뉴 → **Firestore Database** → **규칙** 탭
+3. `firestore.rules` 파일 전체 내용을 복사해서 붙여넣기
+4. **게시** 클릭
+
+---
+
+## Firestore 보안 규칙 구조
+
+```
+users/{uid}                               본인만 읽기/쓰기
+salons/{salonId}                          소속 멤버 읽기 / owner 수정
+salons/{salonId}/designers/{id}           전체 읽기 / owner·manager 수정 / owner 삭제
+salons/{salonId}/services/{id}            전체 읽기 / owner·manager 수정 / owner 삭제
+salons/{salonId}/customers/{id}           전체 읽기 / owner·manager 수정 / owner 삭제
+salons/{salonId}/customerPrivate/{id}     owner·manager만 읽기/쓰기
+salons/{salonId}/reservations/{id}        owner·manager 전체 / designer 본인 예약만
+salons/{salonId}/messageTemplates/{id}    전체 읽기 / owner·manager 수정 / owner 삭제
+salons/{salonId}/messageLogs/{id}         owner·manager 읽기/생성 / owner 수정·삭제
+salons/{salonId}/integrationSettings/{id} 전체 읽기 / owner만 수정
+salons/{salonId}/accessLogs/{id}          전체 생성 / owner·manager 읽기 / 수정·삭제 불가
+```
+
+### 역할별 권한 요약
+
+| 기능 | owner | manager | designer |
+|------|:-----:|:-------:|:--------:|
+| 매장 정보 수정 | ✅ | ❌ | ❌ |
+| 디자이너 관리 | ✅ | ✅ | ❌ |
+| 시술 메뉴 관리 | ✅ | ✅ | ❌ |
+| 고객 기본정보 | ✅ | ✅ | 읽기만 |
+| 고객 민감정보 | ✅ | ✅ | ❌ |
+| 예약 전체 관리 | ✅ | ✅ | 본인만 |
+| 메시지 관리 | ✅ | ✅ | ❌ |
+| 접근 로그 조회 | ✅ | ✅ | ❌ |
+| 데이터 삭제 | ✅ | ❌ | ❌ |
+| `/setup` 접근 | ✅ | ❌ | ❌ |
+
+---
+
+## Vercel 환경변수 설정
+
+1. [Vercel Dashboard](https://vercel.com) → 프로젝트 → **Settings** → **Environment Variables**
+2. 위의 `.env.local` 항목들을 **Production** + **Preview** 환경에 추가
+3. 재배포: **Deployments** → 최신 배포 → **Redeploy**
+
+> `Development` 환경은 민감정보 보호 정책으로 잠길 수 있습니다. 로컬 개발은 `.env.local` 사용.
+
+---
+
+## 네이버예약 연동 안내
+
+현재 네이버예약 API는 **공식 제휴 검토 후 연동 예정**입니다.
+API 승인 후 `/integrations/naver` 페이지에서 활성화됩니다.
+
+---
+
+## 주요 명령어
+
+```bash
+npm run dev      # 개발 서버 (Turbopack)
+npm run build    # 프로덕션 빌드
+npm run lint     # ESLint 검사
+firebase deploy --only firestore:rules  # 보안규칙만 배포
 ```
