@@ -17,7 +17,7 @@ import type { Customer, CustomerPrivate, CustomerGrade, Designer, PermissionRole
 import type { UserData } from "@/context/AuthContext";
 import {
   Search, Plus, MessageSquare, Calendar, X, Edit2,
-  Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Phone, User,
+  Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Phone, User, ChevronLeft,
 } from "lucide-react";
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
@@ -217,15 +217,15 @@ function CustomerFormModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden"
+        className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h3 className="font-bold text-lg text-gray-900">
             {isEdit ? "고객 정보 수정" : "신규 고객 등록"}
           </h3>
@@ -238,7 +238,7 @@ function CustomerFormModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 max-h-[68vh] overflow-y-auto space-y-4">
+        <div className="px-6 py-5 flex-1 overflow-y-auto space-y-4">
           {/* 기본 정보 */}
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -422,7 +422,7 @@ function CustomerFormModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+        <div className="px-6 py-4 border-t border-gray-100 flex gap-3 flex-shrink-0">
           <button
             onClick={onClose}
             className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -865,16 +865,39 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* 상세 패널 */}
+        {/* ── 상세 패널 ── */}
         {selected ? (
-          <CustomerDetail
-            c={selected}
-            salonId={salonId}
-            userData={userData}
-            onEdit={openEdit}
-          />
+          <>
+            {/* 모바일: 전체화면 오버레이 */}
+            <div className="fixed inset-0 z-40 bg-white overflow-y-auto pb-24 lg:hidden">
+              <div className="p-4">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="flex items-center gap-1.5 text-blue-600 text-sm font-medium mb-4 min-h-[44px]"
+                >
+                  <ChevronLeft size={16} />
+                  고객 목록으로
+                </button>
+                <CustomerDetail
+                  c={selected}
+                  salonId={salonId}
+                  userData={userData}
+                  onEdit={openEdit}
+                />
+              </div>
+            </div>
+            {/* 데스크탑: 인라인 사이드패널 */}
+            <div className="hidden lg:flex flex-1 min-w-0">
+              <CustomerDetail
+                c={selected}
+                salonId={salonId}
+                userData={userData}
+                onEdit={openEdit}
+              />
+            </div>
+          </>
         ) : (
-          <div className="flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-3">
+          <div className="hidden lg:flex flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex-col items-center justify-center gap-3">
             <User size={32} className="text-gray-300" />
             <p className="text-sm text-gray-400">고객을 선택하거나 새로 등록하세요.</p>
             <button

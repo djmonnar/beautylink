@@ -114,8 +114,10 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Hourly chart */}
-          <div className="lg:col-span-2 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+          <div className="lg:col-span-2 bg-white rounded-xl p-5 shadow-sm border border-gray-100 min-w-0">
             <h2 className="font-semibold text-gray-900 mb-4">시간대별 예약 현황</h2>
+            <div className="overflow-x-auto">
+            <div className="min-w-[280px]">
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={HOURLY_CHART_DATA}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -125,6 +127,8 @@ export default function DashboardPage() {
                 <Bar dataKey="예약수" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
+            </div>
           </div>
 
           {/* Pie chart */}
@@ -161,41 +165,66 @@ export default function DashboardPage() {
               <h2 className="font-semibold text-gray-900">오늘 예약 목록</h2>
               <a href="/calendar" className="text-sm text-blue-600 hover:underline">전체 보기 →</a>
             </div>
-            <div className="overflow-x-auto">
-              {todayRes.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-gray-400">예약 데이터가 없습니다.</div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      {["시간", "고객명", "시술", "디자이너", "출처", "상태"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {todayRes.map((r) => (
-                      <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-gray-900">{r.time}</td>
-                        <td className="px-4 py-3 text-gray-800">{r.customerName}</td>
-                        <td className="px-4 py-3 text-gray-600">{r.serviceName}</td>
-                        <td className="px-4 py-3 text-gray-600">{r.designerName}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sourceColor(r.source)}`}>
-                            {sourceLabel(r.source)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>
-                            {statusLabel(r.status)}
-                          </span>
-                        </td>
+            {todayRes.length === 0 ? (
+              <div className="px-5 py-8 text-center text-sm text-gray-400">예약 데이터가 없습니다.</div>
+            ) : (
+              <>
+                {/* 모바일 카드 뷰 */}
+                <div className="md:hidden divide-y divide-gray-50">
+                  {todayRes.map((r) => (
+                    <div key={r.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="flex gap-3 min-w-0">
+                        <span className="text-sm font-bold text-gray-900 tabular-nums flex-shrink-0">{r.time}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{r.customerName}</p>
+                          <p className="text-xs text-gray-500 truncate">{r.serviceName} · {r.designerName}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${sourceColor(r.source)}`}>
+                          {sourceLabel(r.source)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColor(r.status)}`}>
+                          {statusLabel(r.status)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* 데스크탑 테이블 */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {["시간", "고객명", "시술", "디자이너", "출처", "상태"].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {todayRes.map((r) => (
+                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-gray-900">{r.time}</td>
+                          <td className="px-4 py-3 text-gray-800">{r.customerName}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.serviceName}</td>
+                          <td className="px-4 py-3 text-gray-600">{r.designerName}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${sourceColor(r.source)}`}>
+                              {sourceLabel(r.source)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(r.status)}`}>
+                              {statusLabel(r.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Designer summary */}

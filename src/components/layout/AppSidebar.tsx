@@ -133,7 +133,7 @@ export default function AppSidebar({ open, onClose }: Props) {
         </nav>
 
         {/* 하단: 로그인 정보 + 로그아웃 */}
-        <div className="px-4 py-4 border-t border-white/10 space-y-3">
+        <div className="px-4 py-4 border-t border-white/10 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
           {/* 유저 정보 */}
           {firebaseReady && user && (
             <div className="flex items-center gap-3 px-1">
