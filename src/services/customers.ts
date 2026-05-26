@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebase";
-import { Customer, CustomerPrivate } from "@/types";
+import type { Customer, CustomerPrivate, PermissionRole } from "@/types";
 import { MOCK_CUSTOMERS, getCustomers as lsGetCustomers, saveCustomers as lsSaveCustomers } from "@/data/mock";
 import {
   collection,
@@ -9,33 +9,31 @@ import {
   addDoc,
   setDoc,
   updateDoc,
-  query,
-  orderBy,
   serverTimestamp,
 } from "firebase/firestore";
 
 const col = (salonId: string) => collection(db!, `salons/${salonId}/customers`);
-// 고객 민감정보: salons/{salonId}/customerPrivate/{customerId}
 const privateDoc = (salonId: string, customerId: string) =>
   doc(db!, `salons/${salonId}/customerPrivate/${customerId}`);
 
 // ── Read ───────────────────────────────────────────────────────────────────
 
 export async function getCustomers(salonId: string): Promise<Customer[]> {
-  if (!db) {
-    return lsGetCustomers();
-  }
+  if (!db) return lsGetCustomers();
 
-  const q = query(col(salonId), orderBy("lastVisitDate", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Customer));
+  // orderBy("lastVisitDate") 는 해당 필드 없는 신규 고객을 제외하므로
+  // 전체를 가져와 클라이언트에서 정렬
+  const snap = await getDocs(col(salonId));
+  const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Customer));
+  return list.sort((a, b) => {
+    const da = a.lastVisitDate || a.registeredAt || "";
+    const db_ = b.lastVisitDate || b.registeredAt || "";
+    return db_.localeCompare(da);
+  });
 }
 
 export async function getCustomer(salonId: string, customerId: string): Promise<Customer | null> {
-  if (!db) {
-    return MOCK_CUSTOMERS.find((c) => c.id === customerId) ?? null;
-  }
-
+  if (!db) return MOCK_CUSTOMERS.find((c) => c.id === customerId) ?? null;
   const snap = await getDoc(doc(db, `salons/${salonId}/customers`, customerId));
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as Customer;
@@ -45,11 +43,7 @@ export async function getCustomerPrivate(
   salonId: string,
   customerId: string
 ): Promise<CustomerPrivate | null> {
-  if (!db) {
-    // Demo: return stub private data
-    return { phoneRaw: "010-0000-0000" };
-  }
-
+  if (!db) return { phoneRaw: "010-0000-0000" };
   const snap = await getDoc(privateDoc(salonId, customerId));
   if (!snap.exists()) return null;
   return snap.data() as CustomerPrivate;
@@ -76,7 +70,6 @@ export async function addCustomer(
   });
 
   if (privateData) {
-    // setDoc: 문서가 없어도 생성 (updateDoc은 기존 문서가 있어야 해서 버그)
     await setDoc(privateDoc(salonId, ref.id), {
       ...privateData,
       createdAt: serverTimestamp(),
@@ -112,10 +105,29 @@ export async function saveCustomerPrivate(
   data: Partial<CustomerPrivate>
 ): Promise<void> {
   if (!db) return;
+  await setDoc(
+    privateDoc(salonId, customerId),
+    { ...data, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+}
 
-  // merge: true → 기존 필드 유지하면서 부분 업데이트
-  await setDoc(privateDoc(salonId, customerId), {
-    ...data,
-    updatedAt: serverTimestamp(),
-  }, { merge: true });
+// ── 접근 로그 기록 (non-blocking) ──────────────────────────────────────────
+
+export function logCustomerAccess(
+  salonId: string,
+  action: string,
+  customerId: string,
+  user: { uid: string; name: string; role: PermissionRole }
+): void {
+  if (!db) return;
+  addDoc(collection(db, `salons/${salonId}/accessLogs`), {
+    userId: user.uid,
+    userName: user.name,
+    role: user.role,
+    action,
+    targetType: "customer",
+    targetId: customerId,
+    createdAt: serverTimestamp(),
+  }).catch(() => {});
 }
