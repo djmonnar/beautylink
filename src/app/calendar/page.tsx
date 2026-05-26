@@ -66,6 +66,14 @@ function formatDateDisplay(dateStr: string): string {
   return `${d.getFullYear()}.${mm}.${dd} (${days[d.getDay()]}) ~ ${em}.${ed} (${days[end.getDay()]})`;
 }
 
+function formatDateShort(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}.${dd} (${days[d.getDay()]})`;
+}
+
 // ── 예약 상세 모달 ─────────────────────────────────────────────────────────
 function ReservationModal({
   r,
@@ -115,15 +123,15 @@ function ReservationModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
+        className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-xl overflow-hidden flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h3 className="font-bold text-lg text-gray-900">예약 상세</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
@@ -131,7 +139,7 @@ function ReservationModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4 max-h-[72vh] overflow-y-auto space-y-5">
+        <div className="px-6 py-4 flex-1 overflow-y-auto space-y-5">
           {/* 기본 정보 */}
           <div className="space-y-3 text-sm">
             <div className="flex items-center gap-3">
@@ -288,7 +296,7 @@ function ReservationModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100">
+        <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
           <button
             onClick={onClose}
             className="w-full border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
@@ -392,7 +400,11 @@ export default function CalendarPage() {
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="text-sm font-semibold text-gray-900">{formatDateDisplay(viewDate)}</span>
+            {/* 모바일: 짧은 날짜, 데스크탑: 전체 날짜 */}
+            <span className="text-sm font-semibold text-gray-900">
+              <span className="hidden sm:inline">{formatDateDisplay(viewDate)}</span>
+              <span className="sm:hidden">{formatDateShort(viewDate)}</span>
+            </span>
             <button
               onClick={() => setViewDate((d) => addDays(d, step))}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
@@ -407,7 +419,8 @@ export default function CalendarPage() {
             </button>
           </div>
 
-          <div className="ml-auto flex items-center gap-3 text-xs">
+          {/* 범례: 모바일 숨김 */}
+          <div className="ml-auto items-center gap-3 text-xs hidden lg:flex">
             {[
               { label: "네이버예약", color: "bg-emerald-400" },
               { label: "전화예약",   color: "bg-blue-400" },
@@ -422,7 +435,67 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="flex gap-4">
+        {/* ── 모바일 요약 스트립 (md 미만) ────────────────────────────── */}
+        <div className="md:hidden flex items-center gap-2 flex-wrap text-xs">
+          {[
+            { label: "전체", value: reservations.length, color: "text-gray-700" },
+            { label: "확정", value: confirmedCount,  color: "text-blue-600" },
+            { label: "완료", value: completedCount,  color: "text-green-600" },
+            { label: "대기", value: pendingCount,    color: "text-yellow-600" },
+            { label: "노쇼", value: noShowCount,     color: "text-red-500" },
+          ].map((s) => (
+            <span key={s.label} className={`font-medium ${s.color}`}>
+              {s.label} <span className="font-bold">{s.value}</span>
+            </span>
+          ))}
+        </div>
+
+        {/* ── 모바일 리스트 뷰 (md 미만) ───────────────────────────────── */}
+        <div className="md:hidden space-y-2">
+          {reservations.length === 0 ? (
+            <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-gray-100">
+              <p className="text-sm text-gray-400">이 날짜의 예약이 없습니다.</p>
+            </div>
+          ) : (
+            reservations
+              .slice()
+              .sort((a, b) => a.time.localeCompare(b.time))
+              .map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => setSelectedReservationId(r.id)}
+                  className="bg-white rounded-xl px-4 py-3.5 shadow-sm border border-gray-100 cursor-pointer active:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    {/* 왼쪽: 시간 + 정보 */}
+                    <div className="flex gap-3 min-w-0">
+                      <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
+                        <span className="text-sm font-bold text-gray-900 tabular-nums">{r.time}</span>
+                        <div className={`w-2 h-2 rounded-full ${SOURCE_COLORS_BG[r.source]?.includes("emerald") ? "bg-emerald-400" : SOURCE_COLORS_BG[r.source]?.includes("blue") ? "bg-blue-400" : SOURCE_COLORS_BG[r.source]?.includes("rose") ? "bg-rose-400" : "bg-purple-400"}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm leading-tight">{r.customerName}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{r.serviceName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{r.designerName} · {r.duration}분</p>
+                      </div>
+                    </div>
+                    {/* 오른쪽: 상태 + 출처 */}
+                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${STATUS_BADGE[r.status] ?? "bg-gray-100 text-gray-500"}`}>
+                        {statusLabel(r.status)}
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${sourceColor(r.source)}`}>
+                        {sourceLabel(r.source)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
+
+        {/* ── 데스크탑/태블릿 그리드 뷰 (md 이상) ─────────────────────── */}
+        <div className="hidden md:flex gap-4">
           {/* Main calendar */}
           <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -509,8 +582,8 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Right sidebar */}
-          <div className="w-64 flex-shrink-0 space-y-4">
+          {/* Right sidebar — 데스크탑 전용 */}
+          <div className="hidden lg:block w-64 flex-shrink-0 space-y-4">
             {/* Today summary */}
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-3 text-sm">예약 요약</h3>

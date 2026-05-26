@@ -135,14 +135,14 @@ function ServiceFormModal({ service, designers, onClose, onSave }: ServiceFormMo
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-y-auto max-h-[90vh]"
+        className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-xl flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
           <h3 className="font-bold text-lg text-gray-900">
             {isEdit ? "메뉴 수정" : "새 메뉴 등록"}
           </h3>
@@ -151,9 +151,9 @@ function ServiceFormModal({ service, designers, onClose, onSave }: ServiceFormMo
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {/* category + name */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 카테고리 <span className="text-red-500">*</span>
@@ -192,7 +192,7 @@ function ServiceFormModal({ service, designers, onClose, onSave }: ServiceFormMo
           </div>
 
           {/* price + duration */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 가격 (원) <span className="text-red-500">*</span>
@@ -325,7 +325,7 @@ function ServiceFormModal({ service, designers, onClose, onSave }: ServiceFormMo
           )}
         </div>
 
-        <div className="flex gap-3 px-6 pb-6">
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
           <button
             onClick={onClose}
             className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm hover:bg-gray-50"
