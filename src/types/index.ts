@@ -118,7 +118,11 @@ export interface ServiceMenu {
   duration: number;
   assignedDesignerIds: string[];
   active: boolean;
+  description?: string;
   naverMenuName?: string;
+  assignedDesignerNames?: string[];
+  createdBy?: string;    // uid
+  updatedBy?: string;    // uid
   createdAt?: string;
   updatedAt?: string;
 }

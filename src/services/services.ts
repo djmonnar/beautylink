@@ -19,7 +19,6 @@ export async function getServices(salonId: string): Promise<ServiceMenu[]> {
     return lsGetServices();
   }
 
-  // 복합 인덱스 불필요: 전체 조회 후 클라이언트 정렬
   const snap = await getDocs(col(salonId));
   const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceMenu));
   return list.sort((a, b) => {
@@ -33,7 +32,8 @@ export async function getServices(salonId: string): Promise<ServiceMenu[]> {
 
 export async function addService(
   salonId: string,
-  data: Omit<ServiceMenu, "id">
+  data: Omit<ServiceMenu, "id">,
+  createdBy?: string
 ): Promise<string> {
   if (!db) {
     const newS: ServiceMenu = { ...data, id: `s_${Date.now()}` };
@@ -44,6 +44,8 @@ export async function addService(
 
   const ref = await addDoc(col(salonId), {
     ...data,
+    createdBy: createdBy ?? null,
+    updatedBy: createdBy ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -53,7 +55,8 @@ export async function addService(
 export async function updateService(
   salonId: string,
   serviceId: string,
-  data: Partial<ServiceMenu>
+  data: Partial<ServiceMenu>,
+  updatedBy?: string
 ): Promise<void> {
   if (!db) {
     const all = lsGetServices().map((s) =>
@@ -65,6 +68,7 @@ export async function updateService(
 
   await updateDoc(doc(db, `salons/${salonId}/services`, serviceId), {
     ...data,
+    updatedBy: updatedBy ?? null,
     updatedAt: serverTimestamp(),
   });
 }
@@ -72,7 +76,30 @@ export async function updateService(
 export async function toggleServiceActive(
   salonId: string,
   serviceId: string,
-  active: boolean
+  active: boolean,
+  updatedBy?: string
 ): Promise<void> {
-  return updateService(salonId, serviceId, { active });
+  return updateService(salonId, serviceId, { active }, updatedBy);
+}
+
+// ── Access Log ─────────────────────────────────────────────────────────────
+
+export function logServiceAccess(
+  salonId: string,
+  action: string,
+  serviceId: string,
+  user: { uid: string; name: string; role: string }
+): void {
+  if (!db) return;
+  import("firebase/firestore").then(({ collection: col2, addDoc: add, serverTimestamp: ts }) => {
+    add(col2(db!, `salons/${salonId}/accessLogs`), {
+      userId: user.uid,
+      userName: user.name,
+      role: user.role,
+      action,
+      targetType: "service",
+      targetId: serviceId,
+      createdAt: ts(),
+    }).catch(() => {});
+  });
 }

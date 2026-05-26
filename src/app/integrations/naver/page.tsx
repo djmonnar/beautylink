@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
-import { MOCK_DESIGNERS, MOCK_SERVICES } from "@/data/mock";
+import { useAuth } from "@/context/AuthContext";
+import { getServices } from "@/services/services";
+import { getDesigners } from "@/services/designers";
+import { MOCK_DESIGNERS } from "@/data/mock";
+import type { ServiceMenu, Designer } from "@/types";
 import { CheckCircle, Clock, AlertCircle, Link2 } from "lucide-react";
 
 function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
@@ -16,34 +20,50 @@ function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
 }
 
 export default function NaverIntegrationPage() {
+  const { userData } = useAuth();
+  const salonId = userData?.salonId ?? "salon1";
+
   const [shopId, setShopId] = useState("beautylink_hair");
   const [connected, setConnected] = useState(false);
   const [toast, setToast] = useState("");
+
+  const [services, setServices] = useState<ServiceMenu[]>([]);
+  const [designers, setDesigners] = useState<Designer[]>([]);
+
+  useEffect(() => {
+    getServices(salonId).then(setServices).catch(() => {});
+    getDesigners(salonId).then(setDesigners).catch(() => {});
+  }, [salonId]);
 
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   }
 
-  const designerMatchings = [
-    { internal: MOCK_DESIGNERS[0], naverName: "이지은 디자이너", matched: true },
-    { internal: MOCK_DESIGNERS[1], naverName: "박소영 디자이너", matched: true },
-    { internal: MOCK_DESIGNERS[2], naverName: "이준호 디자이너", matched: true },
-    { internal: MOCK_DESIGNERS[3], naverName: "최민지 디자이너", matched: true },
-    { internal: { ...MOCK_DESIGNERS[0], id: "d5", name: "정우현", profileInitial: "정" }, naverName: "", matched: false },
-  ];
+  // Use real designers if loaded, fallback to mock for display
+  const displayDesigners = designers.length > 0 ? designers : MOCK_DESIGNERS;
 
-  const menuMatchings = [
-    { internal: "컷", naver: "여성 컷", matched: true },
-    { internal: "염색", naver: "염색", matched: true },
-    { internal: "클리닉", naver: "클리닉", matched: true },
-    { internal: "펌", naver: "디자일/셋팅 펌", matched: true },
-    { internal: "두피케어", naver: "두피 케어", matched: false },
-  ];
+  // Build designer matchings from real data
+  const designerMatchings = displayDesigners.slice(0, 5).map((d, i) => ({
+    internal: d,
+    naverName: i < 4 ? `${d.name} 디자이너` : "",
+    matched: i < 4,
+  }));
+
+  // Build menu matchings from real active services
+  const activeServices = services.filter((s) => s.active);
+  const menuMatchings = activeServices.slice(0, 8).map((s) => ({
+    internal: s.name,
+    naver: s.naverMenuName || "",
+    matched: !!s.naverMenuName,
+  }));
+
+  const matchedMenus = menuMatchings.filter((m) => m.matched).length;
+  const totalMenus = menuMatchings.length;
 
   const syncLogs = [
     { title: "디자이너 정보 동기화", sub: "20개 중 18개 동기화 완료", status: "완료", time: "2024-05-21 14:30:12" },
-    { title: "시술 메뉴 동기화", sub: "25개 중 24개 동기화 완료", status: "완료", time: "2024-05-21 14:28:05" },
+    { title: "시술 메뉴 동기화", sub: `${totalMenus}개 중 ${matchedMenus}개 동기화 완료`, status: "완료", time: "2024-05-21 14:28:05" },
     { title: "예약 데이터 동기화", sub: "최근 7일 예약 동기화 중 (72%)", status: "진행중", time: "2024-05-21 14:25:10" },
     { title: "상점 정보 확인", sub: "상점 ID 연결 확인 완료", status: "완료", time: "2024-05-21 14:20:01" },
   ];
@@ -88,7 +108,7 @@ export default function NaverIntegrationPage() {
               <div className="flex gap-2">
                 <input
                   value={shopId}
-                  onChange={e => setShopId(e.target.value)}
+                  onChange={(e) => setShopId(e.target.value)}
                   placeholder="네이버예약 상점 ID"
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -132,7 +152,7 @@ export default function NaverIntegrationPage() {
             </label>
           </div>
           <div className="mt-4">
-            <p className="text-xs text-gray-500 mb-2">예약 성성 기본값</p>
+            <p className="text-xs text-gray-500 mb-2">예약 생성 기본값</p>
             <div className="space-y-2">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">예약 상태</label>
@@ -171,8 +191,8 @@ export default function NaverIntegrationPage() {
           <div className="space-y-2">
             {[
               { label: "상점 ID 설정", status: "완료", color: "text-green-600" },
-              { label: "디자이너 매칭", status: "18/20", color: "text-orange-500" },
-              { label: "시술 메뉴 매칭", status: "24/25", color: "text-orange-500" },
+              { label: "디자이너 매칭", status: `${designerMatchings.filter(m => m.matched).length}/${designerMatchings.length}`, color: "text-orange-500" },
+              { label: "시술 메뉴 매칭", status: `${matchedMenus}/${totalMenus}`, color: "text-orange-500" },
               { label: "API 승인 대기", status: "대기", color: "text-gray-400" },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between text-xs py-1">
@@ -221,7 +241,7 @@ export default function NaverIntegrationPage() {
                     {m.matched ? (
                       <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">매칭 완료</span>
                     ) : (
-                      <span className="text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">이매칭</span>
+                      <span className="text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">미매칭</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -235,18 +255,18 @@ export default function NaverIntegrationPage() {
               ))}
             </tbody>
           </table>
-          <div className="flex items-center justify-center gap-2 p-3 border-t border-gray-100">
-            {[1, 2].map(p => <button key={p} className={`w-7 h-7 rounded text-xs ${p === 1 ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>{p}</button>)}
-          </div>
         </div>
 
-        {/* 5. Menu matching */}
+        {/* 5. Menu matching — from real Firestore services */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
               <span className="w-6 h-6 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center font-bold">5</span>
               시술 메뉴 매칭
             </h3>
+            <span className="text-xs text-gray-400">
+              {matchedMenus}/{totalMenus} 매칭
+            </span>
           </div>
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
@@ -257,26 +277,38 @@ export default function NaverIntegrationPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {menuMatchings.map((m, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{m.internal}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.naver || "—"}</td>
-                  <td className="px-4 py-3">
-                    {m.matched ? (
-                      <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">매칭 완료</span>
-                    ) : (
-                      <span className="text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
-                        <AlertCircle size={10} />매칭 필요
-                      </span>
-                    )}
+              {menuMatchings.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-400">
+                    등록된 시술 메뉴가 없습니다.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                menuMatchings.map((m, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-900">{m.internal}</td>
+                    <td className="px-4 py-3 text-gray-600">{m.naver || "—"}</td>
+                    <td className="px-4 py-3">
+                      {m.matched ? (
+                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">매칭 완료</span>
+                      ) : (
+                        <span className="text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit">
+                          <AlertCircle size={10} />매칭 필요
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-          <div className="flex items-center justify-center gap-2 p-3 border-t border-gray-100">
-            {[1, 2, 3].map(p => <button key={p} className={`w-7 h-7 rounded text-xs ${p === 1 ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>{p}</button>)}
-          </div>
+          {menuMatchings.length > 0 && (
+            <div className="px-4 py-3 border-t border-gray-50">
+              <p className="text-xs text-gray-400">
+                네이버 메뉴명은 <a href="/services" className="text-blue-600 underline">시술 메뉴 관리</a>에서 각 메뉴에 입력할 수 있습니다.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
