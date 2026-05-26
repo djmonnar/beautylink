@@ -7,8 +7,6 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  query,
-  orderBy,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -21,9 +19,14 @@ export async function getServices(salonId: string): Promise<ServiceMenu[]> {
     return lsGetServices();
   }
 
-  const q = query(col(salonId), orderBy("category"), orderBy("name"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceMenu));
+  // 복합 인덱스 불필요: 전체 조회 후 클라이언트 정렬
+  const snap = await getDocs(col(salonId));
+  const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceMenu));
+  return list.sort((a, b) => {
+    const catCompare = a.category.localeCompare(b.category);
+    if (catCompare !== 0) return catCompare;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 // ── Write ──────────────────────────────────────────────────────────────────

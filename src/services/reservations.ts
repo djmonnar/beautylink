@@ -8,7 +8,6 @@ import {
   addDoc,
   updateDoc,
   query,
-  orderBy,
   where,
   onSnapshot,
   serverTimestamp,
@@ -27,12 +26,20 @@ export async function getReservations(salonId: string, date?: string): Promise<R
     return date ? data.filter((r) => r.date === date) : data;
   }
 
+  // 복합 인덱스 불필요: where만 사용하고 클라이언트에서 정렬
   const q = date
-    ? query(col(salonId), where("date", "==", date), orderBy("time"))
-    : query(col(salonId), orderBy("date"), orderBy("time"));
+    ? query(col(salonId), where("date", "==", date))
+    : query(col(salonId));
 
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation));
+  const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation));
+
+  // 클라이언트 정렬: date ASC → time ASC
+  return list.sort((a, b) => {
+    const dateCompare = (a.date ?? "").localeCompare(b.date ?? "");
+    if (dateCompare !== 0) return dateCompare;
+    return (a.time ?? "").localeCompare(b.time ?? "");
+  });
 }
 
 // ── Realtime ───────────────────────────────────────────────────────────────
@@ -48,9 +55,13 @@ export function subscribeReservations(
     return () => {};
   }
 
-  const q = query(col(salonId), where("date", "==", date), orderBy("time"));
+  // 복합 인덱스 불필요: where만 사용하고 클라이언트에서 정렬
+  const q = query(col(salonId), where("date", "==", date));
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation)));
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation));
+    // 클라이언트 정렬: time ASC
+    list.sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+    callback(list);
   });
 }
 

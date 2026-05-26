@@ -695,30 +695,33 @@ export default function DesignersPage() {
     setTimeout(() => setToast(null), 2500);
   }
 
-  // ── 데이터 로드 (salonId 확정 후에만 실행) ───────────────────────────────
+  // ── 데이터 로드 ──────────────────────────────────────────────────────────
+  // 디자이너는 독립 로드: 서비스/예약 실패가 디자이너 목록을 막지 않음
   async function loadData() {
     if (!salonId) return;
     setDataLoading(true);
     setDataError(null);
     try {
-      const [d, s, r] = await Promise.all([
-        getDesigners(salonId),
-        getServices(salonId),
-        getReservations(salonId, DEMO_DATE),
-      ]);
+      // 디자이너 먼저 (필수) — 실패 시 에러 표시
+      const d = await getDesigners(salonId);
       setDesigners(d);
-      setServices(s);
-      setReservations(r);
     } catch (err) {
-      console.error("디자이너 데이터 로드 오류:", err);
+      console.error("디자이너 로드 오류:", err);
       setDataError(
-        err instanceof Error
-          ? err.message
-          : "데이터를 불러오는 중 오류가 발생했습니다."
+        err instanceof Error ? err.message : "데이터를 불러오는 중 오류가 발생했습니다."
       );
     } finally {
       setDataLoading(false);
     }
+
+    // 서비스/예약은 보조 데이터: 실패해도 화면은 표시
+    Promise.allSettled([
+      getServices(salonId),
+      getReservations(salonId, DEMO_DATE),
+    ]).then(([sRes, rRes]) => {
+      if (sRes.status === "fulfilled") setServices(sRes.value);
+      if (rRes.status === "fulfilled") setReservations(rRes.value);
+    });
   }
 
   async function loadDesigners() {
