@@ -27,6 +27,7 @@ export interface UserData {
   role: UserRole;
   salonId: string;
   designerId?: string;
+  phoneMasked?: string;
   isActive: boolean;
 }
 
@@ -37,6 +38,7 @@ interface AuthContextValue {
   firebaseReady: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 // ─── Context ────────────────────────────────────────────────
@@ -47,6 +49,7 @@ const AuthContext = createContext<AuthContextValue>({
   firebaseReady: false,
   login: async () => {},
   logout: async () => {},
+  refreshUserData: async () => {},
 });
 
 // ─── Provider ───────────────────────────────────────────────
@@ -54,6 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // ── 유저 데이터 새로고침 ─────────────────────────────────
+  const refreshUserData = async () => {
+    const currentUser = user;
+    if (!currentUser || !db) return;
+    try {
+      const snap = await getDoc(doc(db, "users", currentUser.uid));
+      if (snap.exists()) {
+        setUserData(snap.data() as UserData);
+      }
+    } catch {
+      // silent
+    }
+  };
 
   useEffect(() => {
     // Firebase 미설정 시 즉시 로딩 완료 처리 (데모 모드)
@@ -108,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebaseReady: isConfigured,
         login,
         logout,
+        refreshUserData,
       }}
     >
       {children}

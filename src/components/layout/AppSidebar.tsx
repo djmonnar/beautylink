@@ -12,6 +12,7 @@ import {
   Link2,
   MessageSquare,
   Shield,
+  Settings,
   X,
   LogOut,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/integrations/naver", label: "네이버예약 연동 준비", icon: Link2 },
   { href: "/messages", label: "문자·알림톡·노쇼", icon: MessageSquare },
   { href: "/security", label: "보안 및 권한 관리", icon: Shield },
+  { href: "/settings", label: "설정", icon: Settings },
 ];
 
 const ROLE_LABEL: Record<string, string> = {

@@ -179,6 +179,9 @@ export interface Salon {
   name: string;
   phone?: string;
   address?: string;
+  businessHours?: string;   // e.g. "09:00~19:00"
+  description?: string;
+  naverPlaceUrl?: string;
   plan: "free" | "starter" | "pro";
   createdAt?: string;
   updatedAt?: string;
