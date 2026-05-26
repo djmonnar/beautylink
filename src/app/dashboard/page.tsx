@@ -44,11 +44,13 @@ export default function DashboardPage() {
     getDesigners(salonId).then(setDesigners);
   }, [salonId]);
 
-  const todayRevenue = todayRes
-    .filter((r) => r.status !== "noshow" && r.status !== "cancelled")
+  const completedRes    = todayRes.filter((r) => r.status === "completed");
+  const completedRevenue = completedRes.reduce((s, r) => s + r.price, 0);
+  const expectedRevenue  = todayRes
+    .filter((r) => r.status === "confirmed" || r.status === "pending")
     .reduce((s, r) => s + r.price, 0);
-
-  const noshowCount = todayRes.filter((r) => r.status === "noshow").length;
+  const noShowCount    = todayRes.filter((r) => r.status === "noShow").length;
+  const cancelledCount = todayRes.filter((r) => r.status === "cancelled").length;
 
   function handleReset() {
     resetDemoData();
@@ -78,34 +80,34 @@ export default function DashboardPage() {
             icon={CalendarDays}
             iconColor="text-blue-600"
             iconBg="bg-blue-50"
-            trend="전일 대비 +12%"
+            trend={`완료 ${completedRes.length}건 포함`}
             trendUp
           />
           <StatCard
-            title="신규 고객"
-            value="8명"
+            title="완료 예약"
+            value={`${completedRes.length}건`}
             icon={Users}
             iconColor="text-green-600"
             iconBg="bg-green-50"
-            trend="전일 대비 +8%"
+            trend={`예상 ${todayRes.filter(r=>r.status==="confirmed"||r.status==="pending").length}건 남음`}
             trendUp
           />
           <StatCard
-            title="예상 매출"
-            value={`${todayRevenue.toLocaleString()}원`}
+            title="완료 매출"
+            value={`${completedRevenue.toLocaleString()}원`}
             icon={TrendingUp}
             iconColor="text-purple-600"
             iconBg="bg-purple-50"
-            trend="전일 대비 +15%"
+            trend={`예상 추가 ${expectedRevenue.toLocaleString()}원`}
             trendUp
           />
           <StatCard
-            title="노쇼 건수"
-            value={`${noshowCount}건`}
+            title="노쇼·취소"
+            value={`${noShowCount + cancelledCount}건`}
             icon={AlertTriangle}
             iconColor="text-red-500"
             iconBg="bg-red-50"
-            trend="전일 대비 -33%"
+            trend={`노쇼 ${noShowCount}건 / 취소 ${cancelledCount}건`}
             trendUp={false}
           />
         </div>
@@ -233,9 +235,9 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium text-blue-900">오늘 운영 요약</span>
               </div>
               <div className="space-y-1 text-xs text-blue-800">
-                <p>· 취소: {todayRes.filter((r) => r.status === "cancelled").length}건 / 노쇼: {noshowCount}건</p>
+                <p>· 완료: {completedRes.length}건 / 대기: {todayRes.filter(r=>r.status==="pending").length}건</p>
+                <p>· 노쇼: {noShowCount}건 / 취소: {cancelledCount}건</p>
                 <p>· 가장 바쁜 시간대: 13시</p>
-                <p>· 완료 예약: {todayRes.filter((r) => r.status === "completed").length}건</p>
               </div>
             </div>
           </div>

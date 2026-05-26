@@ -3,7 +3,7 @@
 // ============================================================
 
 export type ReservationSource = "naver" | "phone" | "visit" | "kakao";
-export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "noshow" | "completed";
+export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "noShow" | "completed";
 export type CustomerGrade = "VIP" | "신규" | "재방문" | "휴면";
 export type DesignerStatus = "active" | "off" | "inactive";
 export type MessageType = "reservation_confirm" | "reminder" | "cancel" | "noshow";
@@ -32,13 +32,22 @@ export interface Reservation {
   source: ReservationSource;
   status: ReservationStatus;
   note?: string;
+  internalMemo?: string;  // 내부 메모 (직원용)
   price: number;
+  // 상태 변경 타임스탬프
+  completedAt?: string;
+  noShowAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  // 메타
   createdBy?: string;     // uid
+  updatedBy?: string;     // uid
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface VisitRecord {
+  reservationId?: string; // 중복 방지용
   date: string;
   serviceName: string;
   designerName: string;
@@ -62,6 +71,8 @@ export interface Customer {
   totalSpent: number;
   registeredAt: string;
   lastVisitDate?: string;
+  noShowCount?: number;
+  lastNoShowDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -216,7 +227,7 @@ export function statusLabel(status: ReservationStatus): string {
     confirmed: "확정",
     pending: "대기",
     cancelled: "취소",
-    noshow: "노쇼",
+    noShow: "노쇼",
     completed: "완료",
   };
   return map[status];
@@ -227,7 +238,7 @@ export function statusColor(status: ReservationStatus): string {
     confirmed: "bg-blue-100 text-blue-700",
     pending: "bg-yellow-100 text-yellow-700",
     cancelled: "bg-gray-100 text-gray-500",
-    noshow: "bg-red-100 text-red-700",
+    noShow: "bg-red-100 text-red-700",
     completed: "bg-green-100 text-green-700",
   };
   return map[status];

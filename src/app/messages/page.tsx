@@ -58,7 +58,7 @@ export default function MessagesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
   const [sendToast, setSendToast] = useState(false);
 
-  const noshowRes = MOCK_RESERVATIONS.filter(r => r.status === "noshow");
+  const noshowRes = MOCK_RESERVATIONS.filter(r => r.status === "noShow");
 
   function handleSend() {
     setSendToast(true);

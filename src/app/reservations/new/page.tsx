@@ -10,9 +10,9 @@ import { getDesigners } from "@/services/designers";
 import { getServices } from "@/services/services";
 import type { Reservation, Designer, ServiceMenu } from "@/types";
 
-// 09:00 ~ 20:30, 30분 간격
-const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => {
-  const mins = 9 * 60 + i * 30;
+// 09:00 ~ 20:50, 10분 간격 (72 슬롯)
+const TIME_SLOTS = Array.from({ length: 72 }, (_, i) => {
+  const mins = 9 * 60 + i * 10;
   return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
 });
 
@@ -203,13 +203,13 @@ export default function NewReservationPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       예약 시간 <span className="text-red-500">*</span>
                     </label>
-                    <div className={`grid grid-cols-4 gap-1 p-2.5 border rounded-lg max-h-44 overflow-y-auto ${errors.time ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`}>
+                    <div className={`grid grid-cols-6 gap-1 p-2.5 border rounded-lg max-h-44 overflow-y-auto ${errors.time ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`}>
                       {TIME_SLOTS.map((t) => (
                         <button
                           key={t}
                           type="button"
                           onClick={() => { setForm({ ...form, time: t }); setErrors({ ...errors, time: "" }); }}
-                          className={`py-1.5 rounded-md text-xs font-medium transition-colors ${
+                          className={`py-1 rounded-md text-[11px] font-medium transition-colors ${
                             form.time === t
                               ? "bg-blue-600 text-white shadow-sm"
                               : "bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700"

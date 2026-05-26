@@ -251,7 +251,7 @@ export const MOCK_RESERVATIONS: Reservation[] = [
   { id: "r7", customerId: "c1", customerName: "김지연", customerPhoneMasked: "010-****-5678", designerId: "d1", designerName: "이수연", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-26", time: "10:00", duration: 90, source: "naver", status: "confirmed", price: 80000 },
   { id: "r8", customerId: "c2", customerName: "이수진", customerPhoneMasked: "010-****-9876", designerId: "d2", designerName: "김세은", serviceId: "s1", serviceName: "여성 컷", date: "2025-05-26", time: "14:00", duration: 30, source: "phone", status: "confirmed", price: 30000 },
   { id: "r9", customerId: "c3", customerName: "박소연", customerPhoneMasked: "010-****-1234", designerId: "d1", designerName: "이수연", serviceId: "s2", serviceName: "남성 컷", date: "2025-05-24", time: "11:00", duration: 30, source: "naver", status: "completed", price: 25000 },
-  { id: "r10", customerId: "c4", customerName: "최유정", customerPhoneMasked: "010-****-3456", designerId: "d4", designerName: "최유정 디자이너", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-24", time: "13:00", duration: 90, source: "phone", status: "noshow", price: 80000 },
+  { id: "r10", customerId: "c4", customerName: "최유정", customerPhoneMasked: "010-****-3456", designerId: "d4", designerName: "최유정 디자이너", serviceId: "s5", serviceName: "전체 염색", date: "2025-05-24", time: "13:00", duration: 90, source: "phone", status: "noShow", price: 80000 },
 ];
 
 export const MOCK_MESSAGE_LOGS: MessageLog[] = [

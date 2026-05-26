@@ -1,5 +1,5 @@
 import { db } from "@/lib/firebase";
-import { Reservation } from "@/types";
+import type { Reservation, ReservationStatus, PermissionRole, VisitRecord } from "@/types";
 import { MOCK_RESERVATIONS, getReservations as lsGetReservations, saveReservations as lsSaveReservations } from "@/data/mock";
 import {
   collection,
@@ -12,6 +12,8 @@ import {
   where,
   onSnapshot,
   serverTimestamp,
+  arrayUnion,
+  increment,
   Unsubscribe,
 } from "firebase/firestore";
 
@@ -89,10 +91,103 @@ export async function updateReservation(
   });
 }
 
-export async function updateReservationStatus(
+// ── 상태 변경 (완전한 버전: 고객 이력 반영 + 접근 로그) ──────────────────
+
+export async function changeReservationStatus(
   salonId: string,
-  reservationId: string,
-  status: Reservation["status"]
+  reservation: Reservation,
+  newStatus: ReservationStatus,
+  options?: {
+    cancelReason?: string;
+    updatedBy?: {
+      uid: string;
+      name: string;
+      role: PermissionRole;
+    };
+  }
 ): Promise<void> {
-  return updateReservation(salonId, reservationId, { status });
+  // Demo mode (no Firestore)
+  if (!db) {
+    const all = lsGetReservations().map((r) =>
+      r.id === reservation.id
+        ? { ...r, status: newStatus, cancelReason: options?.cancelReason }
+        : r
+    );
+    lsSaveReservations(all);
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const resRef = doc(db, `salons/${salonId}/reservations`, reservation.id);
+
+  // 예약 문서 업데이트
+  const updateData: Record<string, unknown> = {
+    status: newStatus,
+    updatedAt: serverTimestamp(),
+    updatedBy: options?.updatedBy?.uid ?? null,
+  };
+
+  if (newStatus === "completed") {
+    updateData.completedAt = now;
+  } else if (newStatus === "noShow") {
+    updateData.noShowAt = now;
+  } else if (newStatus === "cancelled") {
+    updateData.cancelledAt = now;
+    updateData.cancelReason = options?.cancelReason ?? "";
+  }
+
+  await updateDoc(resRef, updateData);
+
+  // 접근 로그 기록 (non-blocking)
+  if (options?.updatedBy) {
+    const actionMap: Partial<Record<ReservationStatus, string>> = {
+      completed: "reservation_completed",
+      noShow: "reservation_no_show",
+      cancelled: "reservation_cancelled",
+    };
+    const action = actionMap[newStatus] ?? "reservation_status_changed";
+
+    addDoc(collection(db, `salons/${salonId}/accessLogs`), {
+      userId: options.updatedBy.uid,
+      userName: options.updatedBy.name,
+      role: options.updatedBy.role,
+      action,
+      targetType: "reservation",
+      targetId: reservation.id,
+      createdAt: serverTimestamp(),
+    }).catch(() => {});
+  }
+
+  // 고객 문서 업데이트 (non-blocking)
+  if (reservation.customerId) {
+    const customerRef = doc(db, `salons/${salonId}/customers`, reservation.customerId);
+
+    // 완료 처리 → 방문 이력 추가 (중복 방지: 이미 completed이면 스킵)
+    if (newStatus === "completed" && reservation.status !== "completed") {
+      const visitRecord: VisitRecord = {
+        reservationId: reservation.id,
+        date: reservation.date,
+        serviceName: reservation.serviceName,
+        designerName: reservation.designerName,
+        memo: reservation.note ?? "",
+        price: reservation.price,
+      };
+      updateDoc(customerRef, {
+        visitHistory: arrayUnion(visitRecord),
+        lastVisitDate: reservation.date,
+        totalVisits: increment(1),
+        totalSpent: increment(reservation.price),
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
+    }
+
+    // 노쇼 처리 → 노쇼 카운트 증가 (중복 방지)
+    if (newStatus === "noShow" && reservation.status !== "noShow") {
+      updateDoc(customerRef, {
+        noShowCount: increment(1),
+        lastNoShowDate: reservation.date,
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
+    }
+  }
 }
