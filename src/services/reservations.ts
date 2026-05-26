@@ -67,7 +67,11 @@ export function subscribeReservations(
 
 // ── Write ──────────────────────────────────────────────────────────────────
 
-export async function addReservation(salonId: string, data: Omit<Reservation, "id">): Promise<string> {
+export async function addReservation(
+  salonId: string,
+  data: Omit<Reservation, "id">,
+  createdBy?: string
+): Promise<string> {
   if (!db) {
     const newR: Reservation = { ...data, id: `r_${Date.now()}` };
     const all = lsGetReservations();
@@ -77,6 +81,7 @@ export async function addReservation(salonId: string, data: Omit<Reservation, "i
 
   const ref = await addDoc(col(salonId), {
     ...data,
+    createdBy: createdBy ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -201,4 +206,24 @@ export async function changeReservationStatus(
       }).catch(() => {});
     }
   }
+}
+
+// ── 접근 로그 기록 (non-blocking) ──────────────────────────────────────────
+
+export function logReservationAccess(
+  salonId: string,
+  action: string,
+  reservationId: string,
+  user: { uid: string; name: string; role: PermissionRole }
+): void {
+  if (!db) return;
+  addDoc(collection(db, `salons/${salonId}/accessLogs`), {
+    userId: user.uid,
+    userName: user.name,
+    role: user.role,
+    action,
+    targetType: "reservation",
+    targetId: reservationId,
+    createdAt: serverTimestamp(),
+  }).catch(() => {});
 }
