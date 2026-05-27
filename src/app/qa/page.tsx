@@ -245,15 +245,15 @@ export default function QAPage() {
   const isOwner   = role === "owner";
   const isOM      = role === "owner" || role === "manager";
 
-  const permissions = [
+  const permissions: { label: string; allowed: boolean; note?: string }[] = [
     { label: "고객 읽기",       allowed: true },
     { label: "고객 쓰기",       allowed: isOM },
     { label: "디자이너 읽기",   allowed: true },
     { label: "디자이너 쓰기",   allowed: isOM },
     { label: "시술 메뉴 읽기",  allowed: true },
     { label: "시술 메뉴 쓰기",  allowed: isOM },
-    { label: "예약 읽기",       allowed: true },
-    { label: "예약 쓰기",       allowed: true },
+    { label: "예약 읽기",       allowed: true,  note: "designer는 본인 예약만 가능" },
+    { label: "예약 쓰기",       allowed: true,  note: "designer는 본인 예약만 가능" },
     { label: "매장 정보 수정",  allowed: isOwner },
     { label: "/setup 접근",     allowed: isOwner },
     { label: "/qa 접근",        allowed: isOwner },
@@ -475,12 +475,17 @@ export default function QAPage() {
           </h2>
           <p className="text-xs text-gray-400 mb-4">현재 역할 기준: <span className="font-semibold text-gray-600">{role}</span></p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {permissions.map(({ label, allowed }) => (
+            {permissions.map(({ label, allowed, note }) => (
               <div
                 key={label}
                 className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 bg-gray-50"
               >
-                <span className="text-sm text-gray-700">{label}</span>
+                <div className="min-w-0">
+                  <span className="text-sm text-gray-700">{label}</span>
+                  {note && (
+                    <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{note}</p>
+                  )}
+                </div>
                 {allowed ? (
                   <span className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex-shrink-0">
                     <CheckCircle size={11} />가능
