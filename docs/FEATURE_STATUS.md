@@ -171,7 +171,7 @@
 | Firestore Rules | ✅ | `firestore.rules` | |
 | 역할별 UI 접근 제한 | ✅ | 각 페이지 가드 | |
 | accessLog 기록 | ✅ | 예약/고객/디자이너/시술 | |
-| accessLog 조회 UI | 🔲 | `security/page.tsx` 미완성 | |
+| accessLog 조회 UI | ✅ | `security/page.tsx` | Firestore 연동, 필터·요약카드·모바일카드뷰 |
 | 권한 관리 편집 UI | ❌ | 미착수 | |
 
 ---

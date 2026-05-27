@@ -9,11 +9,28 @@
 
 - **날짜**: 2026-05-27
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 5 보완 — ChatGPT 검수 반영 (Firestore rules, QA 매트릭스, 문서 정리)
+- **작업 단계**: Phase 6 — 보안/권한 관리 페이지 고도화 (/security)
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 6 — 보안/권한 관리 페이지 고도화
+- `/security` 페이지 전면 재작성 (MOCK → Firestore 실 연동)
+- 인증 가드 5단계 추가 (authLoading → !user → !userData → !isOM → designer 차단)
+- **보안 요약 카드**: 최근 7일 접근 로그 통계 6종 (원본 조회/권한 오류 등 위험 강조)
+- **접근 로그 테이블/카드**: Firestore `accessLogs` 최대 200건 조회, `orderBy("createdAt","desc")`
+- **3단 필터**: 날짜(오늘/7일/30일/전체) + 액션(11종) + 사용자명 검색
+- **위험 이벤트 강조**: `DANGER_ACTIONS` Set 기반 빨간 배경 + AlertTriangle 아이콘
+- **모바일 카드형/데스크탑 테이블형** 분기 (`md:hidden` / `hidden md:block`)
+- 역할별 권한 테이블 + 역할 상세 설명 섹션 유지·개선
+- QA 검수센터 바로가기 링크 (owner 전용)
+- Firestore Timestamp 처리 (`toDate()` 또는 string 양쪽 대응)
+
+### Phase 5 보완 — ChatGPT 검수 반영
+- `firestore.rules`: `qaChecks` owner 전용 규칙 추가
+- `/qa` 권한 매트릭스: 예약 읽기/쓰기에 "designer는 본인 예약만 가능" note 표시
+- 문서 상태 업데이트 (Vercel 배포 ✅)
 
 ### Phase 5 — QA 검수센터 추가 (이슈 #3)
 - `/qa` 페이지 신규 생성 — owner 전용 Firestore 진단 페이지
@@ -182,7 +199,7 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 ## 다음 추천 작업
 
 우선순위 순:
-1. **보안/권한 페이지** — accessLog 조회 UI 구현 (`/security`)
-2. **디자이너 관리 고도화** — 근무 스케줄 편집 UI (휴무일 캘린더)
-3. **예약 캘린더 주간 뷰** — 주 단위 실제 구현
-4. **설정 페이지** — 매장 정보 편집 UI
+1. **디자이너 관리 고도화** — 근무 스케줄 편집 UI (휴무일 캘린더)
+2. **예약 캘린더 주간 뷰** — 주 단위 실제 구현
+3. **설정 페이지** — 매장 정보 편집 UI
+4. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
