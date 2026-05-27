@@ -192,5 +192,5 @@
 |------|------|----------|------|
 | npm run build | ✅ | — | TypeScript strict 통과 |
 | 모바일 UI (390px) | ✅ | — | Chrome DevTools 기준 |
-| Vercel 배포 | ❌ | 미착수 | 환경변수 설정 후 가능 |
+| Vercel 배포 | ✅ | beautylink-alpha.vercel.app | 운영 테스트 중 |
 | QA 검수센터 (/qa) | ✅ | `src/app/qa/page.tsx` | owner 전용, 연결 진단+쓰기 테스트 |

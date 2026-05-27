@@ -172,6 +172,16 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if false;
       }
+
+
+      // ── QA 검사 기록 ───────────────────────────────────────────
+      //  owner만 read/create 가능 / update·delete 불가
+      //  실제 고객·예약 데이터와 분리 유지
+
+      match /qaChecks/{checkId} {
+        allow read, create: if isOwnerOf(salonId);
+        allow update, delete: if false;
+      }
     }
   }
 }
