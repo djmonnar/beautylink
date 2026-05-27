@@ -163,7 +163,31 @@
 
 ---
 
-## 13. Firestore Rules
+## 13. QA 검수센터 (`/qa`)
+
+- [ ] owner 계정으로 접근 → 정상 표시
+- [ ] manager/designer 계정으로 접근 → "접근 권한 없음" 표시
+- [ ] 비로그인 상태로 접근 → `/login` 리다이렉트
+- [ ] 사이드바에 "QA 검수센터" 메뉴가 owner에게만 노출
+- [ ] 계정 정보 섹션: uid/email/name/role/salonId/designerId/isActive 표시
+- [ ] uid 복사 버튼 동작
+- [ ] salonId 없을 때 경고(노란) 표시
+- [ ] Firebase 미연결(데모 모드): 계정+권한 섹션만 표시, 나머지 비활성
+- [ ] Firestore 연결 섹션: 9개 경로 성공/실패 배지 표시
+- [ ] Firestore 연결 실패 시 에러 메시지 표시 (permission-denied 등)
+- [ ] 데이터 현황: 13개 카운트 표시
+- [ ] 활성 디자이너 / 활성 시술 메뉴 / 오늘 예약 필터 카운트
+- [ ] 권한 체크: 현재 role 기준 가능/불가 표시
+- [ ] "다시 검사" 버튼 → 재조회 동작
+- [ ] 마지막 검사 시간 표시
+- [ ] 쓰기 테스트 버튼 → qaChecks 컬렉션에 저장 성공
+- [ ] 쓰기 테스트 실패 시 에러 메시지 표시
+- [ ] 무한 로딩 없음 (타임아웃 or 즉시 오류 표시)
+- [ ] 모바일 카드형 UI 정상
+
+---
+
+## 14. Firestore Rules
 
 - [ ] `users/{uid}` — 본인만 읽기/쓰기
 - [ ] `salons/{salonId}` — 소속 멤버 읽기, owner만 수정
