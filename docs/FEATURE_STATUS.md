@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-27 (Phase 4 — 모바일 UI 안정화 완료)
+> 마지막 업데이트: 2026-05-27 (Phase 5 — QA 검수센터 완료)
 
 ---
 
@@ -193,4 +193,4 @@
 | npm run build | ✅ | — | TypeScript strict 통과 |
 | 모바일 UI (390px) | ✅ | — | Chrome DevTools 기준 |
 | Vercel 배포 | ❌ | 미착수 | 환경변수 설정 후 가능 |
-| QA 검수센터 (/qa) | ❌ | 미착수 | Firestore 연결 진단 |
+| QA 검수센터 (/qa) | ✅ | `src/app/qa/page.tsx` | owner 전용, 연결 진단+쓰기 테스트 |

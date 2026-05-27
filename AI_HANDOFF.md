@@ -8,14 +8,21 @@
 ## 마지막 업데이트
 
 - **날짜**: 2026-05-27
-- **작업자**: Claude Code (Sonnet 4.5)
-- **작업 단계**: Phase 4 — 모바일 UI 안정화
+- **작업자**: Claude Code (Sonnet 4.6)
+- **작업 단계**: Phase 5 — QA 검수센터 추가 (이슈 #3)
 
 ---
 
 ## 최근 작업 요약
 
-### Phase 1 — 시술 메뉴 관리 CRUD
+### Phase 5 — QA 검수센터 추가 (이슈 #3)
+- `/qa` 페이지 신규 생성 — owner 전용 Firestore 진단 페이지
+- 5개 섹션: 계정 상태 / Firestore 연결 / 데이터 현황 / 권한 체크 / 쓰기 테스트
+- `AppSidebar`에 "QA 검수센터" 메뉴 추가 (owner에게만 노출)
+- `NavItem` 인터페이스 도입으로 `ownerOnly`, `badge` 속성 지원
+- Firebase 미연결(데모 모드) 시 graceful fallback 처리
+
+### Phase 4 — 모바일 UI 안정화
 - `src/app/services/page.tsx` 전면 재작성
 - Firestore `salons/{salonId}/services` 컬렉션 연동
 - 카테고리 필터, 활성/비활성 토글, 담당 디자이너 연결
@@ -49,6 +56,13 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/app/qa/page.tsx` | 신규 | QA 검수센터 페이지 |
+| `src/components/layout/AppSidebar.tsx` | 수정 | NavItem 인터페이스, ownerOnly 필터, QA 메뉴 추가 |
+
+### Phase 4 이전 변경 파일
+
+| 파일 | 변경 유형 | 설명 |
+|------|----------|------|
 | `src/components/layout/MobileBottomNav.tsx` | 신규 | 모바일 하단 네비게이션 |
 | `src/components/layout/AdminLayout.tsx` | 수정 | h-dvh, MobileBottomNav 연결, pb-20 |
 | `src/components/layout/AppSidebar.tsx` | 수정 | safe-area-inset-bottom |
@@ -65,6 +79,13 @@
 
 ## 새로 추가된 기능
 
+- ✅ QA 검수센터 (`/qa`) — owner 전용 Firestore 진단 페이지
+  - 로그인 계정 상태 (uid/email/name/role/salonId/designerId/isActive)
+  - Firestore 9개 경로 연결 상태 + 문서 수 (`getCountFromServer`)
+  - 데이터 현황 13개 항목 (활성 필터 포함)
+  - 역할별 권한 체크 매트릭스
+  - `qaChecks` 컬렉션 쓰기 테스트
+  - 데모 모드(Firebase 미연결) graceful fallback
 - ✅ 시술 메뉴 CRUD (Firestore 연동, 소프트 삭제 active=false)
 - ✅ 예약 등록: 고객 인라인 생성
 - ✅ 예약 등록: 디자이너↔시술 양방향 필터
@@ -87,7 +108,7 @@
 | 예약 캘린더 주간/월간 뷰 | 미완성 | 일/주/월 버튼은 있으나 주간 실제 동작 미구현 |
 | 설정 페이지 | 미완성 | 매장 정보 편집 UI 없음 |
 | 보안/권한 관리 페이지 | 미완성 | accessLog 조회 UI 없음 |
-| QA 검수센터 | 미착수 | Firestore 연결 상태 진단 페이지 |
+| QA 검수센터 | ✅ 완료 | `/qa` 페이지 구현 완료 |
 | Vercel 배포 | 미착수 | 환경변수 설정 후 가능 |
 
 ---
@@ -124,6 +145,10 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트한 항목
 
+- ✅ `npm run build` 통과 (Phase 5 포함, `/qa` 라우트 포함)
+- ✅ QA 페이지 TypeScript 타입 오류 없음
+- ✅ AppSidebar ownerOnly 필터링 로직
+- ✅ 데모 모드(!db) graceful fallback UI
 - ✅ `npm run build` 통과 (TypeScript strict mode)
 - ✅ 시술 메뉴 등록/수정/비활성화 (데모 모드)
 - ✅ 예약 등록 폼 유효성 검사
@@ -144,7 +169,9 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## ChatGPT에게 검수 요청할 포인트
 
-1. **모바일 UX**: 스크린샷 첨부 후 바텀시트/리스트 뷰/하단 탭 UX 검수
+1. **QA 페이지 구조**: 5개 섹션 순서와 정보 배치가 진단 목적에 적합한지 검토
+2. **권한 체크 매트릭스**: designer 역할에서 예약 읽기/쓰기 "가능"이 맞는지 (본인 예약만 가능한데 UI에서 "가능"으로 표시됨) 검토 필요
+3. **모바일 UX**: 스크린샷 첨부 후 바텀시트/리스트 뷰/하단 탭 UX 검수
 2. **예약 등록 플로우**: 중복 감지 / 휴무일 차단 / 저장 후 패널 시나리오 검토
 3. **권한 로직**: owner/manager/designer 역할별 UI 노출 기준 검토
 4. **에러 처리**: salonId null 가드 / auth loading 가드 일관성 검토
