@@ -72,10 +72,10 @@
 
 ## 보안
 
-### 🟡 QA 검수센터 미구현
-- **현상**: Firestore 연결 상태, 데이터 개수, 권한 체크를 한 화면에서 보는 /qa 페이지 없음
-- **개선 방향**: owner 전용 진단 페이지 구현 예정
-- **우선순위**: 중간
+### 🟡 보안 페이지 accessLog orderBy 인덱스 의존
+- **현상**: `orderBy("createdAt", "desc")`는 단일 필드 인덱스라 자동 생성되나, 실제 Firestore 연동 전까지 미검증
+- **개선 방향**: Firestore 실 데이터로 orderBy 정상 동작 확인 필요
+- **우선순위**: 낮음 (단일 orderBy는 자동 인덱스 적용됨)
 
 ### 🟡 고객 삭제 기능 없음
 - **현상**: 고객 soft-delete 정책 미결정
@@ -93,3 +93,5 @@
 | 시술 메뉴 "스타일링" 카테고리 없음 | 2026-05-27 | ServiceMenu category union에 추가 |
 | 예약 등록 중복 체크 없음 | 2026-05-27 | `timeToMin()` 겹침 감지 로직 추가 |
 | 모달 스크롤 밀림 (max-h 초과) | 2026-05-27 | `flex flex-col max-h-[90dvh]`로 수정 |
+| /security MOCK 데이터 전용 접근 로그 | 2026-05-27 | Firestore accessLogs 실 연동, 필터/카드뷰 추가 |
+| qaChecks Firestore 규칙 누락 | 2026-05-27 | firestore.rules에 owner 전용 규칙 추가 |
