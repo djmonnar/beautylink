@@ -7,13 +7,32 @@
 
 ## 마지막 업데이트
 
-- **날짜**: 2026-05-27
+- **날짜**: 2026-05-29
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 6 — 보안/권한 관리 페이지 고도화 (/security)
+- **작업 단계**: Phase 7 — 디자이너 관리 고도화 (휴무일 캘린더 편집)
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 7 — 디자이너 관리 고도화 (휴무일 캘린더 편집)
+- **`src/lib/designerSchedule.ts`** 신규 생성 — 스케줄 관련 공유 헬퍼 함수
+  - `isDesignerWorkingOnDate(designer, date)` — workDays + daysOff 통합 근무 여부 판단
+  - `isDesignerDayOff(designer, date)` — 특정 휴무일 포함 여부
+  - `formatDateStr(date)` — 로컬 시간 기준 YYYY-MM-DD 변환 (UTC toISOString 대신)
+- **`src/app/designers/page.tsx`** DesignerFormModal 개선:
+  - 기존 `<input type="date">` + "추가" 버튼 → **월간 달력 UI**로 교체
+  - 이전/다음 달 이동 버튼 (ChevronLeft/Right)
+  - 날짜 클릭 시 daysOff 토글 (주황색 강조)
+  - 비근무 요일(workDays 미포함) 회색 표시
+  - 오늘 날짜 파란 테두리 표시
+  - 선택된 휴무일 목록 태그 + X 버튼 (달력과 동기화)
+  - 범례 (휴무/오늘/비근무요일)
+- **스케줄 변경 별도 accessLog**: `designer_schedule_updated`, `designer_work_days_updated`, `designer_days_off_updated`
+- **`src/app/security/page.tsx`** actionDisplay + ACTION_FILTERS에 새 액션 5종 추가
+  - `designer_schedule_updated`, `designer_work_days_updated`, `designer_days_off_updated`
+  - `designer_status_changed`, `designer_deactivated`
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 모두 정상)
 
 ### Phase 6 — 보안/권한 관리 페이지 고도화
 - `/security` 페이지 전면 재작성 (MOCK → Firestore 실 연동)
@@ -73,6 +92,9 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/lib/designerSchedule.ts` | 신규 | 스케줄 공유 헬퍼 (isDesignerWorkingOnDate, isDesignerDayOff) |
+| `src/app/designers/page.tsx` | 수정 | 휴무일 달력 UI, 스케줄 accessLog 분리 |
+| `src/app/security/page.tsx` | 수정 | actionDisplay + ACTION_FILTERS에 새 액션 5종 추가 |
 | `src/app/qa/page.tsx` | 신규 | QA 검수센터 페이지 |
 | `src/components/layout/AppSidebar.tsx` | 수정 | NavItem 인터페이스, ownerOnly 필터, QA 메뉴 추가 |
 
@@ -121,7 +143,7 @@
 |------|------|------|
 | 실제 SMS/알림톡 발송 | 보류 | Mock UI만 구현됨 |
 | 실제 네이버예약 API | 보류 | 공식 제휴 후 연동 예정 |
-| 디자이너 관리 고도화 | 미완성 | 기본 CRUD는 있으나 근무 스케줄 UI 부족 |
+| 디자이너 관리 고도화 | ✅ 완료 | 휴무일 달력 편집 UI 완성 (Phase 7) |
 | 예약 캘린더 주간/월간 뷰 | 미완성 | 일/주/월 버튼은 있으나 주간 실제 동작 미구현 |
 | 설정 페이지 | 미완성 | 매장 정보 편집 UI 없음 |
 | 보안/권한 관리 페이지 | 미완성 | accessLog 조회 UI 없음 |
@@ -199,7 +221,7 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 ## 다음 추천 작업
 
 우선순위 순:
-1. **디자이너 관리 고도화** — 근무 스케줄 편집 UI (휴무일 캘린더)
-2. **예약 캘린더 주간 뷰** — 주 단위 실제 구현
-3. **설정 페이지** — 매장 정보 편집 UI
-4. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
+1. **예약 캘린더 주간 뷰** — 주 단위 실제 구현 (7일 컬럼 그리드)
+2. **설정 페이지** — 매장 정보 편집 UI
+3. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
+4. **designerSchedule.ts 활용** — `/reservations/new` 휴무일 체크 로직을 공유 헬퍼로 교체
