@@ -94,6 +94,13 @@
 - [ ] 담당 시술 메뉴 연결
 - [ ] 비활성화 처리 (status="inactive", deleteDoc 금지)
 - [ ] owner/manager만 수정 가능
+- [ ] 휴무일 달력 UI — 이전/다음 달 이동
+- [ ] 휴무일 달력 UI — 날짜 클릭 시 주황색 강조 (daysOff 추가)
+- [ ] 휴무일 달력 UI — 이미 선택된 날짜 클릭 시 제거 (토글)
+- [ ] 오늘 날짜 파란 테두리로 표시
+- [ ] 비근무 요일(workDays 미포함) 회색 표시
+- [ ] 선택된 휴무일 목록 태그 표시 + X 버튼 제거 동작
+- [ ] 저장 후 designer_schedule_updated / designer_days_off_updated / designer_work_days_updated accessLog 기록
 
 ---
 

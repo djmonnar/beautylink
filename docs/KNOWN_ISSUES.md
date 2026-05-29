@@ -18,11 +18,9 @@
 - **개선 방향**: 주간은 7일 컬럼 그리드, 월간은 달력 형태
 - **우선순위**: 중간
 
-### 🟡 디자이너 휴무일 캘린더 편집 없음
-- **현상**: `daysOff` 배열에 날짜 추가/삭제 UI 없음
-- **현재 처리**: Firestore 직접 수정 또는 초기 데이터에 포함
-- **개선 방향**: 디자이너 수정 모달에 달력 날짜 선택 UI 추가
-- **우선순위**: 중간
+### ~~🟡 디자이너 휴무일 캘린더 편집 없음~~ ✅ 해결 (Phase 7)
+- **해결**: 디자이너 수정 모달에 월간 달력 UI 추가 — 날짜 클릭으로 daysOff 추가/제거
+- **관련 파일**: `src/app/designers/page.tsx`, `src/lib/designerSchedule.ts`
 
 ---
 
@@ -95,3 +93,4 @@
 | 모달 스크롤 밀림 (max-h 초과) | 2026-05-27 | `flex flex-col max-h-[90dvh]`로 수정 |
 | /security MOCK 데이터 전용 접근 로그 | 2026-05-27 | Firestore accessLogs 실 연동, 필터/카드뷰 추가 |
 | qaChecks Firestore 규칙 누락 | 2026-05-27 | firestore.rules에 owner 전용 규칙 추가 |
+| 디자이너 휴무일 편집 UI 없음 | 2026-05-29 | 월간 달력 클릭 UI, isDesignerWorkingOnDate 헬퍼 추가 |

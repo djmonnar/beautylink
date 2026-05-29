@@ -25,6 +25,8 @@ import {
   AlertCircle,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ShieldOff,
 } from "lucide-react";
 
@@ -150,7 +152,11 @@ function DesignerFormModal({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [dayOffInput, setDayOffInput] = useState("");
+  // 휴무일 달력: 현재 표시 중인 월의 1일을 저장
+  const [calendarDate, setCalendarDate] = useState<Date>(() => {
+    const t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
 
   function handleNameChange(val: string) {
     setForm((f) => ({ ...f, name: val, profileInitial: val.trim()[0] ?? "" }));
@@ -172,13 +178,19 @@ function DesignerFormModal({
     setForm((f) => ({ ...f, workDays: days }));
   }
 
-  function addDayOff() {
-    if (!dayOffInput || form.daysOff.includes(dayOffInput)) {
-      setDayOffInput("");
-      return;
-    }
-    setForm((f) => ({ ...f, daysOff: [...f.daysOff, dayOffInput].sort() }));
-    setDayOffInput("");
+  /** 달력 날짜 클릭 시 daysOff 추가 또는 제거 */
+  function toggleDayOff(dateStr: string) {
+    setForm((f) => ({
+      ...f,
+      daysOff: f.daysOff.includes(dateStr)
+        ? f.daysOff.filter((d) => d !== dateStr)
+        : [...f.daysOff, dateStr].sort(),
+    }));
+  }
+
+  /** YYYY-MM-DD 형식 날짜 문자열 생성 (로컬 시간 기준) */
+  function buildDateStr(year: number, month: number, day: number): string {
+    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
   function validate(): Record<string, string> {
@@ -204,11 +216,24 @@ function DesignerFormModal({
       const role = ROLE_MAP[user.role];
       if (designer) {
         await updateDesigner(salonId, designer.id, form, { uid: user.uid });
-        logDesignerAccess(salonId, "designer_updated", designer.id, {
-          uid: user.uid,
-          name: user.name,
-          role,
-        });
+        // 공통 수정 로그
+        logDesignerAccess(salonId, "designer_updated", designer.id, { uid: user.uid, name: user.name, role });
+        // 스케줄 변경 여부 감지 → 별도 로그
+        const workDaysChanged =
+          JSON.stringify([...form.workDays].sort((a, b) => a - b)) !==
+          JSON.stringify([...designer.workDays].sort((a, b) => a - b));
+        const daysOffChanged =
+          JSON.stringify([...form.daysOff].sort()) !==
+          JSON.stringify([...designer.daysOff].sort());
+        if (workDaysChanged || daysOffChanged) {
+          logDesignerAccess(salonId, "designer_schedule_updated", designer.id, { uid: user.uid, name: user.name, role });
+        }
+        if (workDaysChanged) {
+          logDesignerAccess(salonId, "designer_work_days_updated", designer.id, { uid: user.uid, name: user.name, role });
+        }
+        if (daysOffChanged) {
+          logDesignerAccess(salonId, "designer_days_off_updated", designer.id, { uid: user.uid, name: user.name, role });
+        }
         onSaved(designer.id);
       } else {
         const newId = await addDesigner(salonId, form, { uid: user.uid, name: user.name });
@@ -226,6 +251,17 @@ function DesignerFormModal({
       setSaving(false);
     }
   }
+
+  // ── 달력 계산값 (render 시 calendarDate 기준으로 도출) ──────────────────────
+  const calYear     = calendarDate.getFullYear();
+  const calMonth    = calendarDate.getMonth();                          // 0-indexed
+  const firstDow    = new Date(calYear, calMonth, 1).getDay();          // 0=일
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const calCells: (number | null)[] = [];
+  for (let i = 0; i < firstDow; i++) calCells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calCells.push(d);
+  const _now     = new Date();
+  const todayStr = buildDateStr(_now.getFullYear(), _now.getMonth(), _now.getDate());
 
   const inputCls = (field: string) =>
     `w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
@@ -440,41 +476,129 @@ function DesignerFormModal({
             )}
           </div>
 
-          {/* 휴무일 */}
+          {/* 휴무일 달력 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">특정 휴무일</label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="date"
-                value={dayOffInput}
-                onChange={(e) => setDayOffInput(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              특정 휴무일
+              <span className="ml-1.5 text-xs font-normal text-gray-400">날짜 클릭으로 추가/제거</span>
+            </label>
+
+            {/* 월 네비게이션 */}
+            <div className="flex items-center justify-between mb-2 px-1">
               <button
                 type="button"
-                onClick={addDayOff}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                onClick={() => setCalendarDate(new Date(calYear, calMonth - 1, 1))}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                추가
+                <ChevronLeft size={15} className="text-gray-500" />
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                {calYear}년 {calMonth + 1}월
+              </span>
+              <button
+                type="button"
+                onClick={() => setCalendarDate(new Date(calYear, calMonth + 1, 1))}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight size={15} className="text-gray-500" />
               </button>
             </div>
-            {form.daysOff.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {form.daysOff.map((d) => (
-                  <span
-                    key={d}
-                    className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded-full border border-orange-200"
+
+            {/* 요일 헤더 */}
+            <div className="grid grid-cols-7 mb-0.5">
+              {["일", "월", "화", "수", "목", "금", "토"].map((lbl, i) => (
+                <div
+                  key={lbl}
+                  className={`text-center text-[10px] font-medium py-1 ${
+                    i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-400"
+                  }`}
+                >
+                  {lbl}
+                </div>
+              ))}
+            </div>
+
+            {/* 날짜 그리드 */}
+            <div className="grid grid-cols-7 border border-gray-100 rounded-xl overflow-hidden bg-white">
+              {calCells.map((day, idx) => {
+                if (day === null)
+                  return <div key={`e-${idx}`} className="aspect-square bg-gray-50/50" />;
+                const dateStr  = buildDateStr(calYear, calMonth, day);
+                const isDayOff = form.daysOff.includes(dateStr);
+                const dow      = new Date(calYear, calMonth, day).getDay(); // 0=일
+                const isWorkDay = form.workDays.includes(dow);
+                const isToday  = dateStr === todayStr;
+                const isSun    = dow === 0;
+                const isSat    = dow === 6;
+                return (
+                  <button
+                    key={dateStr}
+                    type="button"
+                    onClick={() => toggleDayOff(dateStr)}
+                    title={isDayOff ? `${dateStr} 휴무 해제` : `${dateStr} 휴무 추가`}
+                    className={`
+                      aspect-square flex items-center justify-center text-[11px] font-medium
+                      transition-colors border-[0.5px] border-gray-50
+                      ${isDayOff
+                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                        : isToday && !isDayOff
+                        ? "ring-2 ring-inset ring-blue-400 text-blue-600 hover:bg-blue-50"
+                        : !isWorkDay
+                        ? "text-gray-300 bg-gray-50/50 hover:bg-gray-100/50"
+                        : isSun
+                        ? "text-red-400 hover:bg-red-50"
+                        : isSat
+                        ? "text-blue-400 hover:bg-blue-50"
+                        : "text-gray-700 hover:bg-gray-100"
+                      }
+                    `}
                   >
-                    {d}
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, daysOff: f.daysOff.filter((x) => x !== d) }))}
-                      className="hover:text-orange-900"
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 범례 */}
+            <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-400 px-0.5">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm bg-orange-500 inline-block flex-shrink-0" />
+                휴무
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm ring-2 ring-blue-400 inline-block flex-shrink-0" />
+                오늘
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded-sm bg-gray-100 inline-block flex-shrink-0" />
+                비근무요일
+              </span>
+            </div>
+
+            {/* 선택된 휴무일 목록 */}
+            {form.daysOff.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-1.5">
+                  선택된 휴무일{" "}
+                  <span className="font-semibold text-orange-600">{form.daysOff.length}일</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {form.daysOff.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded-full border border-orange-200"
                     >
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
+                      {d}
+                      <button
+                        type="button"
+                        onClick={() => toggleDayOff(d)}
+                        className="hover:text-orange-900"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
