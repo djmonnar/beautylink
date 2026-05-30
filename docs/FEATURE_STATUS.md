@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-29 (Phase 7 — 디자이너 휴무일 캘린더 편집 완료)
+> 마지막 업데이트: 2026-05-29 (Phase 7.5 — 디자이너 스케줄 고도화 완료)
 
 ---
 
@@ -119,9 +119,10 @@
 | 담당 시술 연결 | ✅ | serviceIds | |
 | 오늘 예약 현황 연동 | 🔶 | todayReservations 필드 | 자동 갱신 미구현 |
 | 휴무일 캘린더 편집 | ✅ | daysOff 배열 | 월간 달력 클릭 UI |
+| 반복 휴무 보조 버튼 | ✅ | daysOff 배열 | 매요일 일괄 추가/제거 (Phase 7.5) |
 | 스케줄 변경 accessLog | ✅ | logDesignerAccess | designer_schedule/work_days/days_off_updated |
 | accessLog 기록 | ✅ | logDesignerAccess | |
-| 스케줄 헬퍼 공유 함수 | ✅ | `src/lib/designerSchedule.ts` | isDesignerWorkingOnDate / isDesignerDayOff |
+| 스케줄 헬퍼 공유 함수 | ✅ | `src/lib/designerSchedule.ts` | isDesignerWorkingOnDate / isDesignerDayOff / getDesignerWorkStatus |
 
 ---
 

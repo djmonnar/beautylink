@@ -9,11 +9,26 @@
 
 - **날짜**: 2026-05-29
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 7 — 디자이너 관리 고도화 (휴무일 캘린더 편집)
+- **작업 단계**: Phase 7.5 — 디자이너 스케줄 고도화 (반복 휴무 보조 + 예약 연동 강화)
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 7.5 — 디자이너 스케줄 고도화
+- **`src/lib/designerSchedule.ts`** 확장:
+  - `getDesignerWorkStatus(designer, date)` — 5단계 상태 반환 (inactive/off/day_off/non_work_day/working)
+  - `getWeekdayDatesInMonth(year, month, dow)` — 반복 휴무 보조용, 특정 월의 특정 요일 날짜 배열
+  - `DesignerWorkStatus` 타입 export
+- **`src/app/designers/page.tsx`** 개선:
+  - **반복 휴무 보조 버튼**: "매일/매월/매화..." 버튼으로 해당 월 해당 요일 전체 일괄 추가/제거
+    - 전체 추가됨 → 주황 버튼, 일부만 → 연한 주황, 없음 → 회색
+    - 날짜 개수 표시 (예: 매월(4))
+  - **근무 스케줄 구분선**: 색상/담당시술 섹션과 스케줄 섹션 사이에 시각적 구분선 추가
+- **`src/app/reservations/new/page.tsx`** 강화:
+  - `getDesignerWorkStatus` 헬퍼 import → inline 로직 교체
+  - 디자이너 드롭다운에 `[비근무]` 배지 추가 (기존 `[휴무]`, `[특정휴무]`에 더해)
+  - `selectedDate`를 `T00:00:00` 로컬 파싱으로 UTC 오프셋 방지
 
 ### Phase 7 — 디자이너 관리 고도화 (휴무일 캘린더 편집)
 - **`src/lib/designerSchedule.ts`** 신규 생성 — 스케줄 관련 공유 헬퍼 함수
