@@ -9,11 +9,45 @@
 
 - **날짜**: 2026-05-30
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 8 + 캘린더 안정화 패치 — 예약 캘린더 주간 뷰 실제 구현 + salonId null safety + 월 버튼 준비중 처리
+- **작업 단계**: Phase 9 — 설정 페이지 편집 UI (내 정보 / 매장 정보 / 비밀번호 / accessLog)
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 9 — 설정 페이지 편집 UI
+
+#### 주요 변경 파일
+- **`src/types/index.ts`**: `Salon` 인터페이스 확장
+  - `weekdayStart`, `weekdayEnd`, `weekendStart`, `weekendEnd`, `regularClosedDays` 필드 추가
+- **`src/services/settings.ts`**: 전면 재작성
+  - `SalonUpdate` 타입에 구조적 영업시간 필드 추가
+  - `getSalon` 데모 fallback에 신규 필드 반영
+  - `SettingsAction` 타입: `user_profile_updated | salon_info_updated | password_reset_requested`
+  - `logSettingsAccess(salonId, action, userId, userName, role)` 신규 추가 → `salons/{salonId}/accessLogs`
+- **`src/app/security/page.tsx`**: `ACTION_FILTERS` + `actionDisplay` 에 설정 관련 액션 3종 추가
+- **`src/app/settings/page.tsx`**: 전면 재작성
+  - **AdminLayout 래핑** (기존 raw div → AdminLayout)
+  - **탭 구조**: 모바일 가로 스크롤 칩 / 데스크탑 w-44 좌측 사이드바
+  - **내 정보 탭**: name/phone 수정 가능, email 읽기 전용, role/salonId/designerId/isActive 읽기 전용
+  - **비밀번호 탭**: `sendPasswordResetEmail` 호출 (직접 변경 불가, 이메일 발송)
+  - **매장 정보 탭**: name/phone/address/description/naverPlaceUrl 편집
+    - 평일/주말 시작·종료 `<input type="time">` 피커
+    - 정기 휴무일 토글 버튼 (일~토, 선택 시 인디고 강조)
+    - `deriveBusinessHoursString(form)` → 레거시 `businessHours` 문자열 자동 생성
+  - **권한 가드**: `isOM(=owner|manager)`만 매장 정보 수정 가능, designer는 읽기 전용
+  - **salonId null 가드**: 황색 배너 + 탭 비활성화
+  - **`ROLE_MAP as const`**: `userData.role` → `PermissionRole` 타입 안전 매핑
+  - **accessLog**: 각 저장 액션마다 `logSettingsAccess` 호출
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+#### 남은 보완 (다음 작업 후보)
+- 예약 캘린더 월간 뷰 구현
+- 대시보드 실데이터 연동
+
+---
 
 ### Phase 8 + 안정화 패치 — 예약 캘린더 주간 뷰 + 안정화
 
@@ -137,6 +171,10 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/app/settings/page.tsx` | 전면 재작성 | Phase 9: 내 정보/매장 정보/비밀번호 탭 편집 UI |
+| `src/services/settings.ts` | 전면 재작성 | Phase 9: logSettingsAccess, 구조적 영업시간 필드 |
+| `src/types/index.ts` | 수정 | Phase 9: Salon 인터페이스 영업시간 구조 확장 |
+| `src/app/security/page.tsx` | 수정 | Phase 9: 설정 관련 액션 3종 추가 |
 | `src/app/calendar/page.tsx` | 수정 | Phase 8: 주간 뷰, salonId null safety, 월 버튼 준비중 처리 |
 | `src/services/reservations.ts` | 수정 | Phase 8: subscribeReservationsWeek 추가 |
 | `src/lib/designerSchedule.ts` | 신규 | 스케줄 공유 헬퍼 (isDesignerWorkingOnDate, isDesignerDayOff) |
@@ -194,7 +232,7 @@
 | 예약 캘린더 주간 뷰 | ✅ 완료 | 데스크탑 7컬럼 + 모바일 요일칩 (Phase 8) |
 | 예약 캘린더 월간 뷰 | 🔲 미구현 | 버튼 "준비중" 비활성화 처리됨 |
 | calendar salonId null safety | ✅ 완료 | `?? null` + 가드 UI (안정화 패치) |
-| 설정 페이지 | 미완성 | 매장 정보 편집 UI 없음 |
+| 설정 페이지 | ✅ 완료 | 내 정보/매장 정보/비밀번호 탭 편집 UI (Phase 9) |
 | 보안/권한 관리 페이지 | ✅ 완료 | Phase 6에서 Firestore 연동 완료 |
 | QA 검수센터 보완 | ✅ 완료 | firestore.rules qaChecks 규칙 추가, 권한 매트릭스 note 보정 |
 | Vercel 배포 | ✅ 완료 | beautylink-alpha.vercel.app (운영 테스트 중) |
@@ -233,11 +271,17 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트한 항목
 
-- ✅ `npm run build` 통과 (Phase 5 포함, `/qa` 라우트 포함)
+- ✅ `npm run build` 통과 (Phase 9 포함, 16개 페이지 정상)
+- ✅ Phase 9 TypeScript strict 오류 없음
+- ✅ settings.ts `logSettingsAccess` 타입 안전 (ROLE_MAP as const)
+- ✅ `deriveBusinessHoursString` 로직 코드 검토
+- ✅ 설정 페이지 탭 전환 조건부 렌더링 구조
+- ✅ salonId null 가드 — 매장 정보 탭 황색 배너
+- ✅ security/page.tsx ACTION_FILTERS 3종 추가 빌드 통과
+- ✅ `npm run build` 통과 (Phase 5~8 포함)
 - ✅ QA 페이지 TypeScript 타입 오류 없음
 - ✅ AppSidebar ownerOnly 필터링 로직
 - ✅ 데모 모드(!db) graceful fallback UI
-- ✅ `npm run build` 통과 (TypeScript strict mode)
 - ✅ 시술 메뉴 등록/수정/비활성화 (데모 모드)
 - ✅ 예약 등록 폼 유효성 검사
 - ✅ 예약 등록: 중복 감지 로직
@@ -247,6 +291,10 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트 못 한 항목
 
+- ❌ 설정 페이지 실제 Firestore 저장 확인 (내 정보/매장 정보)
+- ❌ 비밀번호 재설정 이메일 실제 수신 확인
+- ❌ designer 역할로 설정 페이지 접근 시 매장 정보 탭 읽기 전용 동작 확인
+- ❌ accessLog 보안 페이지에서 설정 관련 액션 필터 동작 확인
 - ❌ 실제 Firebase 로그인 후 Firestore 읽기/쓰기
 - ❌ 실제 모바일 기기(iPhone/Android) 직접 테스트
 - ❌ 예약 등록 → Firestore 실제 저장 확인
@@ -270,7 +318,6 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 ## 다음 추천 작업
 
 우선순위 순:
-1. **예약 캘린더 주간 뷰** — 주 단위 실제 구현 (7일 컬럼 그리드)
-2. **설정 페이지** — 매장 정보 편집 UI
-3. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
-4. **designerSchedule.ts 활용** — `/reservations/new` 휴무일 체크 로직을 공유 헬퍼로 교체
+1. **예약 캘린더 월간 뷰** — 현재 "준비중" 비활성화 처리됨, 실제 구현 필요
+2. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
+3. **권한 관리 편집 UI** — 역할별 권한 변경 기능
