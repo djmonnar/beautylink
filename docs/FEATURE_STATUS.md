@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-30 (Phase 10 — 대시보드 실데이터 연동 완료)
+> 마지막 업데이트: 2026-05-30 (Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동 완료)
 
 ---
 
@@ -152,12 +152,18 @@
 
 | 기능 | 상태 | 관련 파일 | 비고 |
 |------|------|----------|------|
-| 템플릿 목록 UI | 🔶 | `messages/page.tsx` | 기본 UI만 |
-| 템플릿 편집 | 🔶 | Mock | Firestore 연동 필요 |
-| 발송 이력 UI | 🔶 | Mock | |
+| 템플릿 목록 / 상세 UI | ✅ | `messages/page.tsx` | Firestore CRUD, 카드 그리드 (Phase 11) |
+| 템플릿 등록 / 수정 | ✅ | `messages/page.tsx` | 바텀시트 모달, 변수 치환 미리보기 (Phase 11) |
+| 템플릿 비활성화 (소프트) | ✅ | `services/messages.ts` | `active=false` (deleteDoc 금지) (Phase 11) |
+| 기본 템플릿 5종 시드 | ✅ | `services/messages.ts` | 예약확정/리마인드/취소/노쇼/재방문 (Phase 11) |
+| Mock 발송 테스트 탭 | ✅ | `messages/page.tsx` | 변수 치환 미리보기 → `messageLogs` 저장 (Phase 11) |
+| 노쇼 관리 탭 | ✅ | `messages/page.tsx` | 노쇼 예약 목록 + 행별 발송 버튼 (Phase 11) |
+| 발송 이력 탭 | ✅ | `messages/page.tsx` | type/channel/status 3중 필터 (Phase 11) |
+| accessLog 기록 5종 | ✅ | `services/messages.ts` | template_created/updated/deactivated/mock_sent/noshow_sent (Phase 11) |
+| 보안 페이지 메시지 액션 필터 | ✅ | `security/page.tsx` | 4종 액션 필터 추가 (Phase 11) |
 | 실제 SMS 발송 | ⏸ | 미착수 | SENS API 연동 예정 |
 | 실제 알림톡 발송 | ⏸ | 미착수 | 카카오 API 연동 예정 |
-| 노쇼 자동 알림 | ❌ | 미착수 | |
+| 노쇼 자동 알림 (예약 시 자동) | ❌ | 미착수 | 수동 발송 UI는 구현됨 |
 
 ---
 

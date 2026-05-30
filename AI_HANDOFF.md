@@ -9,11 +9,65 @@
 
 - **날짜**: 2026-05-30
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 10 — 대시보드 실데이터 연동 (기간 선택 / Firestore 집계 / 차트 실데이터화)
+- **작업 단계**: Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동
+
+#### 주요 변경 파일
+- **`src/types/index.ts`**: 타입 확장
+  - `MessageType`: `"revisit"` 추가 (5종 완비)
+  - `MessageChannel`: `"알림톡" | "LMS"` 추가 (4종 완비)
+  - `MessageTemplate`: `createdBy?`, `updatedBy?` 추가
+  - `MessageLog`: `templateId?`, `templateTitle?`, `reservationId?`, `errorMessage?`, `createdBy?` 추가; status에 `"mock_sent"` 추가
+- **`src/services/messages.ts`**: 전면 재작성
+  - `DEFAULT_TEMPLATES` 5종 (reservation_confirm / reminder / cancel / noshow / revisit)
+  - `getMessageTemplates` / `addMessageTemplate` / `updateMessageTemplate` / `toggleTemplateActive` / `seedDefaultTemplates`
+  - `getMessageLogs` / `addMessageLog` (항상 `status: "mock_sent"` — 실발송 없음)
+  - `getNoShowReservations`: `where("status","==","noShow")` — 단일 필드, 복합 인덱스 불필요
+  - `logMessageAccess` + `MessageAccessAction` 타입 (5종)
+  - `applyVars(content, vars)` — `{고객명}` 치환 헬퍼
+  - `PREVIEW_SAMPLE_VARS`, `CHANNEL_OPTIONS`, `TYPE_OPTIONS`, `TYPE_LABELS`, `TYPE_COLORS`
+- **`src/app/security/page.tsx`**: `ACTION_FILTERS` + `actionDisplay` 에 메시지 관련 액션 4종 추가
+  - `message_template_created`, `message_template_updated`, `message_mock_sent`, `no_show_message_mock_sent`, `message_template_deactivated`
+- **`src/app/messages/page.tsx`**: 전면 재작성
+  - **4탭 구조**: 템플릿 관리 / Mock 발송 테스트 / 노쇼 관리 / 발송 이력
+  - **탭 1**: 템플릿 카드 그리드, active 토글, 바텀시트 모달 (등록/편집), 기본 템플릿 5개 시드 버튼
+  - **탭 2**: 활성 템플릿 선택 → `applyVars` 미리보기 → mockName/mockPhone 입력 → Mock 발송 → `messageLogs` 저장
+  - **탭 3**: 노쇼 예약 목록 (모바일 카드 / 데스크탑 테이블), 행별 "노쇼 안내 발송" 버튼
+  - **탭 4**: 발송 이력 (type/channel/status 3중 필터, 모바일 카드 / 데스크탑 테이블)
+  - **권한**: owner/manager(isOM)만 템플릿 CRUD + 발송, designer는 읽기 전용
+  - **salonId null 가드** + **Mock 안내 배너** 상시 표시
+  - **accessLog**: 5종 액션 (template_created/updated/deactivated/mock_sent/no_show_mock_sent)
+  - **보안**: `phoneMasked`만 표시 (phoneRaw 절대 노출 없음), 실발송 API 호출 없음
+
+#### Firestore 쿼리 전략
+- 노쇼 조회: `where("status","==","noShow")` — 단일 필드 인덱스, 복합 인덱스 불필요
+- 로그 정렬: `getDocs` 후 `tsMs(val)` 헬퍼로 클라이언트 내림차순 정렬
+- 템플릿 정렬: `getDocs` 후 `tsMs(val)` 헬퍼로 클라이언트 오름차순 정렬
+
+#### 변수 치환 지원 변수
+| 변수 | 설명 |
+|------|------|
+| `{고객명}` | 고객 이름 |
+| `{예약일}` | YYYY-MM-DD |
+| `{예약시간}` | HH:mm |
+| `{디자이너명}` | 디자이너 이름 |
+| `{시술명}` | 시술 이름 |
+| `{매장명}` | 매장 이름 |
+| `{매장전화}` | 매장 전화번호 |
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+#### 남은 보완 (다음 작업 후보)
+- 예약 캘린더 월간 뷰 구현
+- 권한 관리 편집 UI
+
+---
 
 ### Phase 10 — 대시보드 실데이터 연동
 
@@ -212,6 +266,10 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/types/index.ts` | 수정 | Phase 11: MessageType/Channel 확장, MessageTemplate/Log 필드 추가 |
+| `src/services/messages.ts` | 전면 재작성 | Phase 11: 템플릿 CRUD, 로그, 노쇼 조회, accessLog, applyVars |
+| `src/app/messages/page.tsx` | 전면 재작성 | Phase 11: 4탭 UI, Mock 발송, 노쇼 관리, 발송 이력, 권한 가드 |
+| `src/app/security/page.tsx` | 수정 | Phase 11: 메시지 관련 액션 4종 필터 추가 |
 | `src/app/dashboard/page.tsx` | 전면 재작성 | Phase 10: 기간 선택, Firestore 실집계, 차트/카드 실데이터화 |
 | `src/services/reservations.ts` | 수정 | Phase 10: getReservationsByDateRange 추가 |
 | `src/app/settings/page.tsx` | 전면 재작성 | Phase 9: 내 정보/매장 정보/비밀번호 탭 편집 UI |
@@ -269,7 +327,7 @@
 
 | 기능 | 상태 | 비고 |
 |------|------|------|
-| 실제 SMS/알림톡 발송 | 보류 | Mock UI만 구현됨 |
+| 실제 SMS/알림톡 발송 | 보류 | Mock UI 구현 완료 (Phase 11), 실발송 API 미연동 |
 | 실제 네이버예약 API | 보류 | 공식 제휴 후 연동 예정 |
 | 디자이너 관리 고도화 | ✅ 완료 | 휴무일 달력 편집 UI 완성 (Phase 7) |
 | 예약 캘린더 주간 뷰 | ✅ 완료 | 데스크탑 7컬럼 + 모바일 요일칩 (Phase 8) |
@@ -314,7 +372,16 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트한 항목
 
-- ✅ `npm run build` 통과 (Phase 10 포함, 16개 페이지 정상)
+- ✅ `npm run build` 통과 (Phase 11 포함, 16개 페이지 정상)
+- ✅ Phase 11 TypeScript strict 오류 없음
+- ✅ `applyVars` 변수 치환 로직 코드 검토
+- ✅ `getNoShowReservations` — 단일 `where("status","==","noShow")` 복합 인덱스 불필요 확인
+- ✅ `toggleTemplateActive` — `active=false` 소프트 비활성화 (deleteDoc 금지)
+- ✅ `addMessageLog` — 항상 `status: "mock_sent"` 설정, 실발송 API 없음
+- ✅ `tsMs(val)` 타임스탬프 헬퍼 (string / Firestore Timestamp / {seconds}) 타입 처리
+- ✅ salonId null 가드 + Mock 안내 배너 구조
+- ✅ `ROLE_MAP as const` 타입 안전 매핑
+- ✅ security/page.tsx 액션 필터 4종 추가 빌드 통과
 - ✅ Phase 10 TypeScript strict 오류 없음
 - ✅ `buildHourlyData` / `buildDailyData` / `buildSourceData` / `getBusiestHour` 로직 코드 검토
 - ✅ salonId null 가드 (황색 배너)
@@ -339,6 +406,12 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트 못 한 항목
 
+- ❌ 메시지 템플릿 Firestore 실제 저장/조회 확인
+- ❌ 기본 템플릿 5개 시드 — 실제 Firestore에 중복 없이 저장되는지 확인
+- ❌ 발송 이력 Firestore `messageLogs` 컬렉션 저장 확인
+- ❌ 노쇼 예약 Firestore 실데이터 조회 확인
+- ❌ designer 역할로 messages 페이지 접근 시 읽기 전용 동작 확인
+- ❌ 보안 페이지에서 메시지 관련 액션 필터 (4종) 동작 확인
 - ❌ 대시보드 실제 Firestore 데이터로 기간별 집계 확인 (오늘/7일/30일)
 - ❌ 30일 range 쿼리 Firestore 단일 필드 인덱스 동작 확인
 - ❌ 신규 고객 수 Firestore registeredAt 필드 포맷 일치 여부 확인
@@ -372,3 +445,4 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 1. **예약 캘린더 월간 뷰** — 현재 "준비중" 비활성화 처리됨, 실제 구현 필요
 2. **권한 관리 편집 UI** — 역할별 권한 변경 기능
 3. **고객 삭제 (소프트)** — 현재 "소프트 삭제 정책 결정 필요"로 보류 중
+4. **문자 실발송 연동** — SENS API / 카카오 알림톡 (외부 승인 후)
