@@ -65,6 +65,38 @@ export function subscribeReservations(
   });
 }
 
+// ── Realtime (week range) ─────────────────────────────────────────────────
+
+/**
+ * 주간 예약 실시간 구독 (7일치 날짜 배열)
+ * where("date", "in", weekDates) — 단일 필드 인덱스, 복합 인덱스 불필요
+ * Firestore "in" 연산자는 최대 30개 값까지 지원 (7일이면 문제 없음)
+ */
+export function subscribeReservationsWeek(
+  salonId: string,
+  weekDates: string[],
+  callback: (reservations: Reservation[]) => void
+): Unsubscribe {
+  if (!db) {
+    const data = lsGetReservations().filter((r) => weekDates.includes(r.date));
+    data.sort((a, b) => {
+      const dc = (a.date ?? "").localeCompare(b.date ?? "");
+      return dc !== 0 ? dc : (a.time ?? "").localeCompare(b.time ?? "");
+    });
+    callback(data);
+    return () => {};
+  }
+  const q = query(col(salonId), where("date", "in", weekDates));
+  return onSnapshot(q, (snap) => {
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation));
+    list.sort((a, b) => {
+      const dc = (a.date ?? "").localeCompare(b.date ?? "");
+      return dc !== 0 ? dc : (a.time ?? "").localeCompare(b.time ?? "");
+    });
+    callback(list);
+  });
+}
+
 // ── Write ──────────────────────────────────────────────────────────────────
 
 export async function addReservation(
