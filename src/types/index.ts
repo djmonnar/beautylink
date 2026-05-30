@@ -157,17 +157,23 @@ export interface MessageLog {
   createdAt?: string;
 }
 
-export interface NaverDesignerMapping {
-  internalId: string;
+/** 디자이너 매핑 항목 (Record 키: designerId) */
+export interface NaverDesignerMappingEntry {
   internalName: string;
-  naverName: string;
-  matched: boolean;
+  naverName: string;          // 빈 문자열 = 미매핑
+  designerStatus: DesignerStatus;
+  updatedAt?: string;
 }
 
-export interface NaverMenuMapping {
+/** 시술 메뉴 매핑 항목 (Record 키: serviceId) */
+export interface NaverServiceMappingEntry {
   internalName: string;
-  naverName: string;
-  matched: boolean;
+  naverMenuName: string;      // 빈 문자열 = 미매핑
+  category: string;
+  price: number;
+  duration: number;
+  serviceActive: boolean;
+  updatedAt?: string;
 }
 
 export interface NaverSyncLog {
@@ -181,12 +187,17 @@ export interface NaverIntegrationSettings {
   status: "pending" | "ready" | "approved" | "disabled";
   storeId: string;
   shopName: string;
-  designerMapping: NaverDesignerMapping[];
-  serviceMapping: NaverMenuMapping[];
+  naverPlaceUrl?: string;
+  apiRequestedAt?: string;
+  apiApprovedAt?: string;
+  designerMapping: Record<string, NaverDesignerMappingEntry>;
+  serviceMapping: Record<string, NaverServiceMappingEntry>;
   syncReadyPercent: number;
+  lastCheckedAt?: string;
   lastSyncAt?: string;
   logs: NaverSyncLog[];
   updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface AccessLog {

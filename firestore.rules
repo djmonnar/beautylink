@@ -159,7 +159,7 @@ service cloud.firestore {
 
       match /integrationSettings/{settingId} {
         allow read:  if belongsToSalon(salonId);
-        allow write: if isOwnerOf(salonId);
+        allow write: if isOwnerOrManagerOf(salonId);
       }
 
 
