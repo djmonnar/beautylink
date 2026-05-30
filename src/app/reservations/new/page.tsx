@@ -24,6 +24,7 @@ import { getServices } from "@/services/services";
 import { getCustomers, addCustomer } from "@/services/customers";
 import { maskPhone, calcEndAt } from "@/types";
 import type { Reservation, Designer, ServiceMenu, Customer, PermissionRole } from "@/types";
+import { getDesignerWorkStatus } from "@/lib/designerSchedule";
 
 // ── 시간 슬롯: 09:00~20:50, 10분 간격 ─────────────────────────────────────
 const TIME_SLOTS = Array.from({ length: 72 }, (_, i) => {
@@ -400,15 +401,19 @@ export default function NewReservationPage() {
     ? calcEndTime(form.time, selectedService.duration)
     : null;
 
-  // Designer warnings
+  // Designer warnings — getDesignerWorkStatus 공유 헬퍼 사용
   const selectedDate = form.date;
-  const selectedDayOfWeek = new Date(selectedDate + "T00:00:00").getDay(); // 0=Sun
+  // 날짜 문자열을 로컬 시간으로 파싱 (T00:00:00 추가로 UTC 오프셋 방지)
+  const selectedDateObj = new Date(selectedDate + "T00:00:00");
 
-  const designerIsOff = selectedDesigner?.status === "off";
-  const designerOnDayOff =
-    selectedDesigner?.daysOff?.includes(selectedDate) ?? false;
-  const designerNotWorkDay =
-    selectedDesigner && !selectedDesigner.workDays.includes(selectedDayOfWeek);
+  const designerWorkStatus = selectedDesigner
+    ? getDesignerWorkStatus(selectedDesigner, selectedDateObj)
+    : null;
+
+  // 하위 호환을 위한 파생 값 (저장 차단 로직에서 사용)
+  const designerIsOff      = designerWorkStatus === "off";
+  const designerOnDayOff   = designerWorkStatus === "day_off";
+  const designerNotWorkDay = designerWorkStatus === "non_work_day";
 
   const designerWarning = selectedDesigner
     ? designerIsOff
@@ -945,12 +950,20 @@ export default function NewReservationPage() {
                       className={inputClass("designerId")}
                     >
                       <option value="">디자이너 선택</option>
-                      {filteredDesigners.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} {d.roleTitle}
-                          {d.status === "off" || (d.daysOff?.includes(form.date)) ? " [휴무]" : ""}
-                        </option>
-                      ))}
+                      {filteredDesigners.map((d) => {
+                        const dateObj = new Date(form.date + "T00:00:00");
+                        const ws = getDesignerWorkStatus(d, dateObj);
+                        const badge =
+                          ws === "off"          ? " [휴무]"
+                          : ws === "day_off"    ? " [특정휴무]"
+                          : ws === "non_work_day" ? " [비근무]"
+                          : "";
+                        return (
+                          <option key={d.id} value={d.id}>
+                            {d.name} {d.roleTitle}{badge}
+                          </option>
+                        );
+                      })}
                     </select>
                   )}
                   {errors.designerId && (

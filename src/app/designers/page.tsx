@@ -13,6 +13,7 @@ import {
 } from "@/services/designers";
 import { getServices } from "@/services/services";
 import { getReservations } from "@/services/reservations";
+import { getWeekdayDatesInMonth } from "@/lib/designerSchedule";
 import type { Designer, ServiceMenu, Reservation, PermissionRole, UserRole } from "@/types";
 import {
   Plus,
@@ -186,6 +187,26 @@ function DesignerFormModal({
         ? f.daysOff.filter((d) => d !== dateStr)
         : [...f.daysOff, dateStr].sort(),
     }));
+  }
+
+  /**
+   * 반복 휴무 보조: 현재 달력 월의 특정 요일 전체를 일괄 추가/제거.
+   * 해당 월의 해당 요일 날짜가 모두 daysOff에 있으면 전체 제거, 아니면 전체 추가.
+   * calendarDate state에서 직접 연·월을 읽어 temporal dead zone 이슈를 회피.
+   */
+  function toggleWeeklyRecurring(dow: number) {
+    const yr = calendarDate.getFullYear();
+    const mo = calendarDate.getMonth();
+    const dates = getWeekdayDatesInMonth(yr, mo, dow);
+    if (dates.length === 0) return;
+    const allAdded = dates.every((d) => form.daysOff.includes(d));
+    setForm((f) => {
+      if (allAdded) {
+        return { ...f, daysOff: f.daysOff.filter((d) => !dates.includes(d)) };
+      }
+      const merged = [...f.daysOff, ...dates.filter((d) => !f.daysOff.includes(d))].sort();
+      return { ...f, daysOff: merged };
+    });
   }
 
   /** YYYY-MM-DD 형식 날짜 문자열 생성 (로컬 시간 기준) */
@@ -397,6 +418,13 @@ function DesignerFormModal({
             </div>
           </div>
 
+          {/* ── 근무 스케줄 섹션 ── */}
+          <div className="flex items-center gap-2 pt-1">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-[10px] font-semibold text-gray-400 tracking-wider uppercase">근무 스케줄</span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
           {/* 근무 요일 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">근무 요일</label>
@@ -573,6 +601,47 @@ function DesignerFormModal({
                 <span className="w-3 h-3 rounded-sm bg-gray-100 inline-block flex-shrink-0" />
                 비근무요일
               </span>
+            </div>
+
+            {/* 반복 휴무 보조 */}
+            <div className="mt-3 p-3 bg-gray-50 rounded-xl">
+              <p className="text-[10px] text-gray-500 mb-2 font-medium">
+                {calYear}년 {calMonth + 1}월 반복 휴무 일괄 추가
+                <span className="ml-1 font-normal text-gray-400">(클릭 시 해당 월 해당 요일 전체 추가/제거)</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {["일", "월", "화", "수", "목", "금", "토"].map((label, dow) => {
+                  const dates = getWeekdayDatesInMonth(calYear, calMonth, dow);
+                  const allAdded = dates.length > 0 && dates.every((d) => form.daysOff.includes(d));
+                  const someAdded = !allAdded && dates.some((d) => form.daysOff.includes(d));
+                  return (
+                    <button
+                      key={dow}
+                      type="button"
+                      onClick={() => toggleWeeklyRecurring(dow)}
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors font-medium ${
+                        allAdded
+                          ? "bg-orange-500 text-white border-orange-500"
+                          : someAdded
+                          ? "bg-orange-100 text-orange-700 border-orange-300"
+                          : "border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
+                      }`}
+                      title={
+                        allAdded
+                          ? `${calMonth + 1}월 매${label}요일 전체 제거`
+                          : `${calMonth + 1}월 매${label}요일 전체 추가`
+                      }
+                    >
+                      매{label}
+                      {dates.length > 0 && (
+                        <span className="ml-1 opacity-60">
+                          ({dates.length})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* 선택된 휴무일 목록 */}
