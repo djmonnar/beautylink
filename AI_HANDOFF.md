@@ -7,13 +7,43 @@
 
 ## 마지막 업데이트
 
-- **날짜**: 2026-05-29
+- **날짜**: 2026-05-30
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 7.5 — 디자이너 스케줄 고도화 (반복 휴무 보조 + 예약 연동 강화)
+- **작업 단계**: Phase 8 + 캘린더 안정화 패치 — 예약 캘린더 주간 뷰 실제 구현 + salonId null safety + 월 버튼 준비중 처리
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 8 + 안정화 패치 — 예약 캘린더 주간 뷰 + 안정화
+
+#### 주요 변경 파일
+- **`src/services/reservations.ts`**: `subscribeReservationsWeek` 추가
+  - Firestore `where("date", "in", weekDates[7개])` — 단일 필드 인덱스, 복합 인덱스 불필요
+  - demo mode fallback (localStorage)
+- **`src/app/calendar/page.tsx`**: 전면 개편
+  - **salonId null safety**: `?? "salon1"` → `?? null`, 가드 UI (`bg-amber-50` 배너)
+  - **null guard**: subscribeReservations / subscribeReservationsWeek / getDesigners 모두 `if (!salonId) return` 추가
+  - **월 버튼 비활성화**: `<span>` + "준비중" 배지로 교체 (클릭 불가)
+  - **주간 헬퍼**: `getWeekMonday`, `getWeekDates`, `formatWeekRange`
+  - **데스크탑 주간 뷰**: 7컬럼 날짜 그리드 (월~일), 날짜별 예약 카드 (시간·고객·디자이너·상태)
+  - **모바일 주간 뷰**: 요일 칩 탭 (월~일, 예약 건수 표시) + 선택 날짜 예약 리스트
+  - **이전/다음 주 이동**: 월요일 기준 ±7일 스냅
+  - **오늘·토·일 색상 강조**: 파란 배경(오늘), 파랑(토), 빨강(일)
+  - **사이드바**: 주간 뷰 시 "이번 주 전체" 통계 표시
+  - `isDesignerWorkingOnDate` 연동으로 휴무 판단 정확도 향상 (workDays + daysOff 통합)
+  - **일별 뷰**: 기존 시간×디자이너 그리드 완전 유지
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+- Vercel `/calendar` 배포 확인 필요
+
+#### 남은 보완 (다음 작업 후보)
+- 월간 뷰 실제 구현 (현재 버튼 비활성화 "준비중" 처리)
+- 대시보드 실시간 데이터 연동 (현재 데모 날짜 고정)
+- 설정 페이지 매장 정보 편집 UI
+
+---
 
 ### Phase 7.5 — 디자이너 스케줄 고도화
 - **`src/lib/designerSchedule.ts`** 확장:
@@ -107,6 +137,8 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/app/calendar/page.tsx` | 수정 | Phase 8: 주간 뷰, salonId null safety, 월 버튼 준비중 처리 |
+| `src/services/reservations.ts` | 수정 | Phase 8: subscribeReservationsWeek 추가 |
 | `src/lib/designerSchedule.ts` | 신규 | 스케줄 공유 헬퍼 (isDesignerWorkingOnDate, isDesignerDayOff) |
 | `src/app/designers/page.tsx` | 수정 | 휴무일 달력 UI, 스케줄 accessLog 분리 |
 | `src/app/security/page.tsx` | 수정 | actionDisplay + ACTION_FILTERS에 새 액션 5종 추가 |
@@ -159,9 +191,11 @@
 | 실제 SMS/알림톡 발송 | 보류 | Mock UI만 구현됨 |
 | 실제 네이버예약 API | 보류 | 공식 제휴 후 연동 예정 |
 | 디자이너 관리 고도화 | ✅ 완료 | 휴무일 달력 편집 UI 완성 (Phase 7) |
-| 예약 캘린더 주간/월간 뷰 | 미완성 | 일/주/월 버튼은 있으나 주간 실제 동작 미구현 |
+| 예약 캘린더 주간 뷰 | ✅ 완료 | 데스크탑 7컬럼 + 모바일 요일칩 (Phase 8) |
+| 예약 캘린더 월간 뷰 | 🔲 미구현 | 버튼 "준비중" 비활성화 처리됨 |
+| calendar salonId null safety | ✅ 완료 | `?? null` + 가드 UI (안정화 패치) |
 | 설정 페이지 | 미완성 | 매장 정보 편집 UI 없음 |
-| 보안/권한 관리 페이지 | 미완성 | accessLog 조회 UI 없음 |
+| 보안/권한 관리 페이지 | ✅ 완료 | Phase 6에서 Firestore 연동 완료 |
 | QA 검수센터 보완 | ✅ 완료 | firestore.rules qaChecks 규칙 추가, 권한 매트릭스 note 보정 |
 | Vercel 배포 | ✅ 완료 | beautylink-alpha.vercel.app (운영 테스트 중) |
 

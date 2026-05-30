@@ -350,7 +350,7 @@ function ReservationModal({
 // ── 메인 캘린더 페이지 ─────────────────────────────────────────────────────
 export default function CalendarPage() {
   const { userData } = useAuth();
-  const salonId = userData?.salonId ?? "salon1";
+  const salonId = userData?.salonId ?? null;
 
   const [view, setView] = useState<"일" | "주" | "월">("주");
   const [viewDate, setViewDate] = useState(DEMO_DATE);
@@ -376,6 +376,7 @@ export default function CalendarPage() {
 
   // 실시간 예약 구독 (뷰에 따라 단일 날짜 / 주간 전환)
   useEffect(() => {
+    if (!salonId) return; // salonId 없으면 구독 skip
     if (view === "주") {
       const wd = getWeekDates(viewDate);
       const unsub = subscribeReservationsWeek(salonId, wd, setReservations);
@@ -388,6 +389,7 @@ export default function CalendarPage() {
 
   // 디자이너 1회 로드
   useEffect(() => {
+    if (!salonId) return; // salonId 없으면 로드 skip
     getDesigners(salonId).then(setDesigners);
   }, [salonId]);
 
@@ -485,6 +487,18 @@ export default function CalendarPage() {
 
   return (
     <AdminLayout title="예약 통합 캘린더" description="디자이너별 예약 현황을 한눈에 확인하고 관리하세요.">
+      {/* ── salonId 미연결 가드 ───────────────────────────────────────── */}
+      {!salonId ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+          <p className="text-amber-800 font-semibold mb-1">
+            매장 정보가 연결되지 않았습니다.
+          </p>
+          <p className="text-sm text-amber-600">
+            users/{userData?.uid ?? "—"}.salonId를 확인해주세요.
+          </p>
+        </div>
+      ) : (
+      <>
       {selectedReservation && (
         <ReservationModal
           r={selectedReservation}
@@ -499,7 +513,7 @@ export default function CalendarPage() {
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-wrap items-center gap-3">
           {/* 뷰 전환 */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            {(["일", "주", "월"] as const).map((v) => (
+            {(["일", "주"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -510,6 +524,13 @@ export default function CalendarPage() {
                 {v}
               </button>
             ))}
+            {/* 월간 뷰 준비중 */}
+            <span className="relative px-3 py-1.5 text-sm font-medium rounded-md text-gray-300 cursor-not-allowed select-none">
+              월
+              <span className="absolute -top-1 -right-0.5 text-[8px] bg-gray-200 text-gray-400 px-1 py-0.5 rounded-full leading-none whitespace-nowrap">
+                준비중
+              </span>
+            </span>
           </div>
 
           {/* 날짜 네비게이션 */}
@@ -944,6 +965,8 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </AdminLayout>
   );
 }
