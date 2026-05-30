@@ -7,13 +7,77 @@
 
 ## 마지막 업데이트
 
-- **날짜**: 2026-05-30
+- **날짜**: 2026-05-31
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 12 — 네이버예약 연동 준비 화면 고도화
+- **작업 단계**: Phase 13 — 직원/권한 관리 편집 UI
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 13 — 직원/권한 관리 편집 UI
+
+#### 주요 변경 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/services/staff.ts` | **신규** — 직원 CRUD 서비스 |
+| `src/app/security/page.tsx` | 탭 구조 전면 재작성 (접근 로그 / 권한 안내 / 직원 관리) |
+| `firestore.rules` | `users/{uid}` 규칙 보완 — owner/manager 직원 조회 허용 |
+
+#### `src/services/staff.ts` (신규)
+- `StaffMember` 인터페이스: `uid, email, name, role, salonId, designerId?, phoneMasked?, isActive`
+- `getStaffMembers(salonId)` — `where("salonId","==",salonId)` 단일 쿼리 후 클라이언트 정렬 (원장→매니저→디자이너, 이름순)
+- `updateStaffRole(uid, role)` — `updateDoc` 역할 변경
+- `updateStaffActive(uid, isActive)` — `updateDoc` 활성 상태 변경
+- `updateStaffDesignerLink(uid, designerId|null)` — `updateDoc` 디자이너 연결
+- `logStaffAccess(salonId, action, targetUid, user)` — accessLogs 4종 기록
+
+#### `src/app/security/page.tsx` 탭 구조
+- **탭 1 — 접근 로그**: 기존 보안 요약 카드(6개) + 로그 테이블 (필터 23→27종)
+- **탭 2 — 권한 안내**: 개인정보 보호 설정 / 역할별 권한 테이블 / 역할 상세 / 처리 방침 / QA 링크
+- **탭 3 — 직원 관리**:
+  - 데스크탑 테이블 / 모바일 카드 이중 레이아웃
+  - 이름·이메일·역할·연결 디자이너·활성 상태 표시
+  - 본인(나) 배지 표시
+  - 비활성 직원 숨김 토글
+  - 수정 모달 (owner 전용): 역할 select / isActive 토글 / designerId select
+  - 초대 준비 안내 섹션 (3단계 수동 등록 가이드)
+
+#### 보안 가드 (클라이언트)
+- 자기 자신 비활성화 불가 → editError 표시
+- 마지막 원장 역할 변경 불가 → editError 표시
+- 비밀번호/이메일/uid/salonId 수정 UI 없음
+- manager: 목록 읽기 전용 (수정 버튼 없음)
+
+#### `firestore.rules` 변경 — `users/{uid}`
+```
+allow read: if isLoggedIn() && (
+  request.auth.uid == uid ||
+  (resource.data.salonId == me().salonId && me().role in ['owner', 'manager'])
+);
+allow create: if isLoggedIn() && request.auth.uid == uid;
+allow update: if isLoggedIn() && (
+  // 본인: role·salonId 변경 불가
+  (request.auth.uid == uid && 역할/salonId 불변 조건) ||
+  // owner가 타직원: uid·email·salonId 변경 불가
+  (request.auth.uid != uid && 같은salonId owner && 핵심필드 불변 조건)
+);
+allow delete: if false;
+```
+
+#### accessLog 4종 (신규)
+| action | 발생 시점 |
+|--------|----------|
+| `user_role_updated` | 역할 변경 저장 |
+| `user_active_status_updated` | 활성 상태 변경 저장 |
+| `user_designer_linked` | 디자이너 연결 변경 저장 |
+| `user_permission_viewed` | owner가 직원 관리 탭 최초 진입 |
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+---
 
 ### Phase 12 — 네이버예약 연동 준비 화면 고도화
 

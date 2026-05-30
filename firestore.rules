@@ -46,13 +46,39 @@ service cloud.firestore {
 
     // ══════════════════════════════════════════════════════════════
     //  users/{uid}
-    //  - 본인만 읽기/쓰기 가능, 삭제 불가
+    //  - 본인: read 가능 / role·salonId 변경 없이 update 가능
+    //  - 같은 salonId의 owner: read·update 가능 (uid·email·salonId 변경 불가)
+    //  - 같은 salonId의 manager: read만 가능
+    //  - designer: 본인 read만 가능
+    //  - delete 금지
     // ══════════════════════════════════════════════════════════════
 
     match /users/{uid} {
-      allow read:   if isLoggedIn() && request.auth.uid == uid;
+      // 본인 또는 같은 salonId의 owner·manager 읽기 가능
+      allow read: if isLoggedIn() && (
+        request.auth.uid == uid ||
+        (resource.data.salonId == me().salonId &&
+         me().role in ['owner', 'manager'])
+      );
+
+      // 계정 생성은 본인만 가능
       allow create: if isLoggedIn() && request.auth.uid == uid;
-      allow update: if isLoggedIn() && request.auth.uid == uid;
+
+      // 수정:
+      // ① 본인: role·salonId는 변경 불가 (프로필 수정만 허용)
+      // ② 같은 salonId의 owner: uid·email·salonId 변경 불가
+      allow update: if isLoggedIn() && (
+        (request.auth.uid == uid &&
+         request.resource.data.salonId == resource.data.salonId &&
+         request.resource.data.role == resource.data.role) ||
+        (request.auth.uid != uid &&
+         resource.data.salonId == me().salonId &&
+         me().role == 'owner' &&
+         request.resource.data.uid == resource.data.uid &&
+         request.resource.data.email == resource.data.email &&
+         request.resource.data.salonId == resource.data.salonId)
+      );
+
       allow delete: if false;
     }
 
