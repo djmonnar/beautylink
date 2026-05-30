@@ -9,11 +9,60 @@
 
 - **날짜**: 2026-05-30
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동
+- **작업 단계**: Phase 12 — 네이버예약 연동 준비 화면 고도화
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 12 — 네이버예약 연동 준비 화면 고도화
+
+#### 주요 변경 파일
+- **`src/types/index.ts`**: 타입 재설계
+  - `NaverDesignerMapping` / `NaverMenuMapping` → `NaverDesignerMappingEntry` / `NaverServiceMappingEntry` (Record 맵 구조)
+  - `NaverIntegrationSettings`: `naverPlaceUrl`, `apiRequestedAt/At`, `designerMapping` Record, `serviceMapping` Record, `lastCheckedAt`, `updatedBy` 필드 추가
+- **`src/services/integrations.ts`**: 전면 재작성
+  - 경로: `salons/{salonId}/integrationSettings/naver` (단일 `setDoc`)
+  - `getNaverSettings`: 구버전 배열 타입 호환 처리 포함
+  - `saveNaverSettings`: `setDoc` 전체 저장
+  - `calcSyncReadyPercent`: 순수 함수, 5항목 100점제 (상점ID 20 + 매장명 10 + URL 10 + 디자이너 30 + 시술 30)
+  - `logNaverAccess` + `NaverAccessAction` 4종
+- **`src/data/mock.ts`**: import 타입명 갱신 (NaverDesignerMappingEntry, NaverServiceMappingEntry)
+- **`src/app/integrations/naver/page.tsx`**: 전면 재작성
+  - `salonId ?? null` + 가드 UI
+  - 병렬 로드: `getNaverSettings` + `getDesigners` + `getServices`
+  - **① 기본 설정**: storeId/shopName/naverPlaceUrl 입력, 상태 select (원장만)
+  - **② 연동 준비율**: 실시간 progress bar + 5항목 체크리스트
+  - **③ 디자이너 매핑**: inactive 숨김 토글, 모바일 카드/데스크탑 테이블, inline 입력
+  - **④ 시술 메뉴 매핑**: inactive 숨김 토글, 카테고리·가격·소요시간 표시, inline 입력
+  - 저장: 기존 매핑 항목 보존 + 현재 목록 갱신 (`...settings.designerMapping` 스프레드)
+  - accessLog 4종, 권한(owner/manager/designer), toast, 무한 로딩 없음
+- **`firestore.rules`**: `integrationSettings` write → `isOwnerOrManagerOf` (매니저도 저장 가능)
+- **`src/app/security/page.tsx`**: 네이버 액션 4종 ACTION_FILTERS + actionDisplay 추가
+
+#### 연동 준비율 계산 공식
+| 항목 | 조건 | 점수 |
+|------|------|------|
+| 상점 ID | 비어있지 않음 | 20점 |
+| 매장명 | 비어있지 않음 | 10점 |
+| 네이버플레이스 URL | 비어있지 않음 | 10점 |
+| 디자이너 매핑 | mapped/active × 30 (active=0이면 만점) | 30점 |
+| 시술 메뉴 매핑 | mapped/active × 30 (active=0이면 만점) | 30점 |
+
+#### 보안 준수
+- 실제 네이버 API 호출 없음
+- API Key 입력란 없음
+- 민감정보 저장 없음
+- phoneRaw 표시 없음
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+#### 남은 보완
+- 예약 캘린더 월간 뷰
+- 권한 관리 편집 UI
+
+---
 
 ### Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동
 

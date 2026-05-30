@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-30 (Phase 11 — 문자·알림톡·노쇼 관리 Firestore 연동 완료)
+> 마지막 업데이트: 2026-05-30 (Phase 12 — 네이버예약 연동 준비 화면 고도화 완료)
 
 ---
 
@@ -171,10 +171,19 @@
 
 | 기능 | 상태 | 관련 파일 | 비고 |
 |------|------|----------|------|
-| 연동 준비 UI | 🔶 | `integrations/naver/page.tsx` | |
-| 디자이너 매핑 | 🔶 | Firestore 실제 데이터 반영 | |
-| 시술 메뉴 매핑 | 🔶 | naverMenuName 기반 | |
-| 실제 API 연동 | ⏸ | 미착수 | 공식 제휴 검토 후 |
+| salonId null safety | ✅ | `integrations/naver/page.tsx` | `?? null` + 가드 UI (Phase 12) |
+| integrationSettings Firestore 연동 | ✅ | `services/integrations.ts` | setDoc/getDoc (Phase 12) |
+| 디자이너 매핑 UI | ✅ | `integrations/naver/page.tsx` | 실데이터, 모바일 카드/데스크탑 테이블 (Phase 12) |
+| 시술 메뉴 매핑 UI | ✅ | `integrations/naver/page.tsx` | 실데이터, 카테고리/가격/소요시간 표시 (Phase 12) |
+| 연동 준비율 자동 계산 | ✅ | `services/integrations.ts` | 5항목 100점 만점, 실시간 progress bar (Phase 12) |
+| 비활성 디자이너/시술 숨김 | ✅ | `integrations/naver/page.tsx` | 기본 숨김 + 토글 (Phase 12) |
+| 연동 상태 관리 | ✅ | `integrations/naver/page.tsx` | pending/ready/approved/disabled (Phase 12) |
+| accessLog 4종 | ✅ | `services/integrations.ts` | naver_integration_updated 외 3종 (Phase 12) |
+| 보안 페이지 네이버 액션 필터 | ✅ | `security/page.tsx` | 4종 추가 (Phase 12) |
+| 안내 배너 | ✅ | `integrations/naver/page.tsx` | API 미호출 명시 (Phase 12) |
+| 권한 구분 | ✅ | `integrations/naver/page.tsx` | 원장: 전체, 매니저: 매핑 수정, 디자이너: 읽기 (Phase 12) |
+| Firestore rules 매니저 쓰기 허용 | ✅ | `firestore.rules` | integrationSettings → isOwnerOrManagerOf (Phase 12) |
+| 실제 API 연동 | ⏸ | 미착수 | 공식 제휴 승인 후 |
 
 ---
 
