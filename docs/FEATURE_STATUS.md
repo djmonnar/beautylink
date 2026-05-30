@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-30 (Phase 12 — 네이버예약 연동 준비 화면 고도화 완료)
+> 마지막 업데이트: 2026-05-31 (Phase 13 — 직원/권한 관리 편집 UI 완료)
 
 ---
 
@@ -191,12 +191,17 @@
 
 | 기능 | 상태 | 관련 파일 | 비고 |
 |------|------|----------|------|
-| Firestore Rules | ✅ | `firestore.rules` | |
+| Firestore Rules | ✅ | `firestore.rules` | Phase 13: users/{uid} owner/manager 조회 허용 |
 | 역할별 UI 접근 제한 | ✅ | 각 페이지 가드 | |
-| accessLog 기록 | ✅ | 예약/고객/디자이너/시술/설정 | |
-| accessLog 조회 UI | ✅ | `security/page.tsx` | Firestore 연동, 필터·요약카드·모바일카드뷰 |
-| 설정 관련 액션 필터 | ✅ | `security/page.tsx` | user_profile_updated / salon_info_updated / password_reset_requested (Phase 9) |
-| 권한 관리 편집 UI | ❌ | 미착수 | |
+| accessLog 기록 | ✅ | 예약/고객/디자이너/시술/설정/직원 | |
+| accessLog 조회 UI | ✅ | `security/page.tsx` | 탭 구조 재편, 필터 27종 (Phase 13) |
+| 권한 안내 탭 | ✅ | `security/page.tsx` | 역할별 권한 테이블, 처리 방침 요약 (Phase 13) |
+| 직원 목록 조회 UI | ✅ | `security/page.tsx` | 데스크탑 테이블 / 모바일 카드, owner/manager (Phase 13) |
+| 역할 수정 UI | ✅ | `security/page.tsx` | owner만, 모달 / 마지막 원장 보호 (Phase 13) |
+| 활성 상태 변경 | ✅ | `security/page.tsx` | isActive=false (deleteDoc 금지), 자기비활성화 보호 (Phase 13) |
+| 디자이너 연결 UI | ✅ | `security/page.tsx` | designer 역할 유저 ↔ designerId 연결 (Phase 13) |
+| 직원 초대 안내 | ✅ | `security/page.tsx` | 3단계 수동 등록 가이드 (Phase 13) |
+| accessLog 직원 관리 4종 | ✅ | `services/staff.ts` | user_role_updated / active_status / designer_linked / permission_viewed (Phase 13) |
 
 ---
 
