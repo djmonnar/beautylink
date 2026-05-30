@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-30 (Phase 8 + 캘린더 안정화 패치 완료)
+> 마지막 업데이트: 2026-05-30 (Phase 9 — 설정 페이지 편집 UI 완료)
 
 ---
 
@@ -174,8 +174,9 @@
 |------|------|----------|------|
 | Firestore Rules | ✅ | `firestore.rules` | |
 | 역할별 UI 접근 제한 | ✅ | 각 페이지 가드 | |
-| accessLog 기록 | ✅ | 예약/고객/디자이너/시술 | |
+| accessLog 기록 | ✅ | 예약/고객/디자이너/시술/설정 | |
 | accessLog 조회 UI | ✅ | `security/page.tsx` | Firestore 연동, 필터·요약카드·모바일카드뷰 |
+| 설정 관련 액션 필터 | ✅ | `security/page.tsx` | user_profile_updated / salon_info_updated / password_reset_requested (Phase 9) |
 | 권한 관리 편집 UI | ❌ | 미착수 | |
 
 ---
@@ -184,9 +185,15 @@
 
 | 기능 | 상태 | 관련 파일 | 비고 |
 |------|------|----------|------|
-| 매장 정보 표시 | 🔶 | `settings/page.tsx` | |
-| 매장 정보 편집 | ❌ | 미착수 | |
-| 영업시간 설정 | ❌ | 미착수 | |
+| 매장 정보 표시 | ✅ | `settings/page.tsx` | Firestore getSalon 연동 |
+| 매장 정보 편집 | ✅ | `settings/page.tsx` | name/phone/address/description/naverPlaceUrl |
+| 영업시간 구조적 편집 | ✅ | `settings/page.tsx` | 평일/주말 시간 picker + 정기 휴무 토글 (Phase 9) |
+| 내 정보 편집 | ✅ | `settings/page.tsx` | name/phone 수정 + role/salonId/designerId 읽기 전용 |
+| 비밀번호 변경 | ✅ | `settings/page.tsx` | sendPasswordResetEmail (이메일 발송) |
+| accessLog 기록 | ✅ | `services/settings.ts` | user_profile_updated / salon_info_updated / password_reset_requested |
+| 역할별 접근 제어 | ✅ | `settings/page.tsx` | 매장 정보: owner/manager만 수정 가능 |
+| 모바일 탭 UI | ✅ | `settings/page.tsx` | 가로 스크롤 탭 칩 |
+| 데스크탑 사이드바 UI | ✅ | `settings/page.tsx` | w-44 좌측 탭 메뉴 |
 
 ---
 

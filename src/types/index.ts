@@ -198,7 +198,12 @@ export interface Salon {
   name: string;
   phone?: string;
   address?: string;
-  businessHours?: string;   // e.g. "09:00~19:00"
+  businessHours?: string;       // 파생 문자열 "평일 09:00~19:00 / 주말 10:00~18:00 / 휴무 일요일"
+  weekdayStart?: string;         // "09:00"
+  weekdayEnd?: string;           // "19:00"
+  weekendStart?: string;         // "10:00"
+  weekendEnd?: string;           // "18:00"
+  regularClosedDays?: number[];  // [0]=일, [1]=월 … [6]=토
   description?: string;
   naverPlaceUrl?: string;
   plan: "free" | "starter" | "pro";
