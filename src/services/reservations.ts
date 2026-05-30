@@ -97,6 +97,40 @@ export function subscribeReservationsWeek(
   });
 }
 
+// ── 기간별 예약 조회 (단일 필드 range — 복합 인덱스 불필요) ────────────────
+
+/**
+ * 날짜 범위로 예약 조회.
+ * where("date",">=",start).where("date","<=",end) — 동일 필드 range 이므로
+ * 복합 인덱스 불필요, orderBy 미사용, 클라이언트 정렬.
+ */
+export async function getReservationsByDateRange(
+  salonId: string,
+  startDate: string, // "YYYY-MM-DD"
+  endDate: string    // "YYYY-MM-DD"
+): Promise<Reservation[]> {
+  if (!db) {
+    const data = lsGetReservations();
+    return data
+      .filter((r) => r.date >= startDate && r.date <= endDate)
+      .sort((a, b) => {
+        const dc = (a.date ?? "").localeCompare(b.date ?? "");
+        return dc !== 0 ? dc : (a.time ?? "").localeCompare(b.time ?? "");
+      });
+  }
+  const q = query(
+    col(salonId),
+    where("date", ">=", startDate),
+    where("date", "<=", endDate)
+  );
+  const snap = await getDocs(q);
+  const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Reservation));
+  return list.sort((a, b) => {
+    const dc = (a.date ?? "").localeCompare(b.date ?? "");
+    return dc !== 0 ? dc : (a.time ?? "").localeCompare(b.time ?? "");
+  });
+}
+
 // ── Write ──────────────────────────────────────────────────────────────────
 
 export async function addReservation(

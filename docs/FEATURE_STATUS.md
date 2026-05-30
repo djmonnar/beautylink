@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-30 (Phase 9 — 설정 페이지 편집 UI 완료)
+> 마지막 업데이트: 2026-05-30 (Phase 10 — 대시보드 실데이터 연동 완료)
 
 ---
 
@@ -43,12 +43,16 @@
 
 | 기능 | 상태 | 관련 파일 | 비고 |
 |------|------|----------|------|
-| 오늘 예약 통계 카드 | ✅ | `dashboard/page.tsx` | 건수/매출/노쇼 |
-| 시간대별 차트 | ✅ | recharts BarChart | Mock 데이터 |
-| 예약 출처 파이차트 | ✅ | recharts PieChart | Mock 데이터 |
-| 예약 목록 테이블 | ✅ | dashboard/page.tsx | 모바일 카드 뷰 포함 |
-| 디자이너별 예약 수 | ✅ | dashboard/page.tsx | 프로그레스 바 |
-| 실시간 데이터 연동 | 🔶 | getReservations | 데모날짜 고정 |
+| 기간 선택 탭 | ✅ | `dashboard/page.tsx` | 오늘 / 최근 7일 / 최근 30일 (Phase 10) |
+| 통계 카드 실데이터 | ✅ | `dashboard/page.tsx` | 예약수/완료매출/노쇼취소/신규고객 (Phase 10) |
+| 시간대별/일별 차트 | ✅ | recharts BarChart | 오늘→시간대별, 7일/30일→일별 (Phase 10) |
+| 예약 출처 파이차트 | ✅ | recharts PieChart | Firestore 실데이터 집계 (Phase 10) |
+| 예약 목록 테이블 | ✅ | `dashboard/page.tsx` | 모바일 카드 뷰 + 날짜 컬럼 (기간 선택 시) |
+| 디자이너별 예약 수 | ✅ | `dashboard/page.tsx` | 진행바 최대값 상대 비율 (Phase 10) |
+| Firestore 실데이터 연동 | ✅ | `services/reservations.ts` | 오늘=단일 where, 7/30일=range 쿼리 (Phase 10) |
+| salonId null safety | ✅ | `dashboard/page.tsx` | `?? null` + 가드 UI |
+| 데모 모드 유지 | ✅ | `dashboard/page.tsx` | db=null이면 DEMO_DATE 기준 |
+| 로딩/에러/빈 상태 | ✅ | `dashboard/page.tsx` | Loader2 스피너, 에러 배너, 빈 텍스트 |
 
 ---
 
