@@ -9,11 +9,52 @@
 
 - **날짜**: 2026-05-30
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 9 — 설정 페이지 편집 UI (내 정보 / 매장 정보 / 비밀번호 / accessLog)
+- **작업 단계**: Phase 10 — 대시보드 실데이터 연동 (기간 선택 / Firestore 집계 / 차트 실데이터화)
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 10 — 대시보드 실데이터 연동
+
+#### 주요 변경 파일
+- **`src/services/reservations.ts`**: `getReservationsByDateRange` 추가
+  - `where("date",">=",start).where("date","<=",end)` — 동일 필드 range 쿼리, 복합 인덱스 불필요
+  - 데모 모드: localStorage 필터링
+- **`src/app/dashboard/page.tsx`**: 전면 재작성
+  - `salonId = userData?.salonId ?? null` + 가드 UI (황색 배너)
+  - `isDemo = !db` 판별 → 데모 모드 시 DEMO_DATE 기준 집계
+  - **기간 선택 탭**: 오늘 / 최근 7일 / 최근 30일 (인디고 pill 버튼)
+  - **통계 카드 실데이터**: 예약건수 / 완료매출 / 노쇼+취소 / 신규고객(오늘) or 완료예약(7/30일)
+  - **차트 실데이터**: 오늘→시간대별, 7/30일→일별 Bar차트 + 출처 Pie차트
+  - **예약 목록**: 기간별 최신순 20건, 기간 선택 시 날짜 컬럼 추가
+  - **디자이너별 진행바**: 하드코딩 10 → 기간 내 최대값 기준 상대 비율
+  - **운영 요약**: 오늘 탭에서만 "가장 바쁜 시간대" 및 신규고객 표시
+  - `Loader2` 스피너, 에러 배너 (다시 시도 버튼), 빈 상태 UI
+  - 데모 모드: "※ 데모 모드: DEMO_DATE 기준" 안내 문구
+
+#### 집계 로직
+| 지표 | 산식 |
+|------|------|
+| 예약 건수 | `reservations.length` |
+| 완료 매출 | `completed` 예약 price 합계 |
+| 예상 누계 | `confirmed+pending+completed` price 합계 |
+| 노쇼+취소 | `noShow`+`cancelled` 건수 |
+| 신규 고객 | `registeredAt.startsWith(todayStr)` 건수 (오늘 탭만) |
+| 출처 비율 | source별 건수 / 전체 × 100 |
+
+#### Firestore 쿼리 전략
+- 오늘: `where("date","==",today)` — 단일 필드 인덱스
+- 7/30일: `where("date",">=",start).where("date","<=",end)` — 단일 필드 range, 복합 인덱스 불필요
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+#### 남은 보완 (다음 작업 후보)
+- 예약 캘린더 월간 뷰 구현
+- 권한 관리 편집 UI
+
+---
 
 ### Phase 9 — 설정 페이지 편집 UI
 
@@ -171,6 +212,8 @@
 
 | 파일 | 변경 유형 | 설명 |
 |------|----------|------|
+| `src/app/dashboard/page.tsx` | 전면 재작성 | Phase 10: 기간 선택, Firestore 실집계, 차트/카드 실데이터화 |
+| `src/services/reservations.ts` | 수정 | Phase 10: getReservationsByDateRange 추가 |
 | `src/app/settings/page.tsx` | 전면 재작성 | Phase 9: 내 정보/매장 정보/비밀번호 탭 편집 UI |
 | `src/services/settings.ts` | 전면 재작성 | Phase 9: logSettingsAccess, 구조적 영업시간 필드 |
 | `src/types/index.ts` | 수정 | Phase 9: Salon 인터페이스 영업시간 구조 확장 |
@@ -271,7 +314,12 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트한 항목
 
-- ✅ `npm run build` 통과 (Phase 9 포함, 16개 페이지 정상)
+- ✅ `npm run build` 통과 (Phase 10 포함, 16개 페이지 정상)
+- ✅ Phase 10 TypeScript strict 오류 없음
+- ✅ `buildHourlyData` / `buildDailyData` / `buildSourceData` / `getBusiestHour` 로직 코드 검토
+- ✅ salonId null 가드 (황색 배너)
+- ✅ `getReservationsByDateRange` range 쿼리 — 복합 인덱스 불필요 확인
+- ✅ 데모 모드(db=null) DEMO_DATE 기준 분기 로직
 - ✅ Phase 9 TypeScript strict 오류 없음
 - ✅ settings.ts `logSettingsAccess` 타입 안전 (ROLE_MAP as const)
 - ✅ `deriveBusinessHoursString` 로직 코드 검토
@@ -291,6 +339,9 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트 못 한 항목
 
+- ❌ 대시보드 실제 Firestore 데이터로 기간별 집계 확인 (오늘/7일/30일)
+- ❌ 30일 range 쿼리 Firestore 단일 필드 인덱스 동작 확인
+- ❌ 신규 고객 수 Firestore registeredAt 필드 포맷 일치 여부 확인
 - ❌ 설정 페이지 실제 Firestore 저장 확인 (내 정보/매장 정보)
 - ❌ 비밀번호 재설정 이메일 실제 수신 확인
 - ❌ designer 역할로 설정 페이지 접근 시 매장 정보 탭 읽기 전용 동작 확인
@@ -319,5 +370,5 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 우선순위 순:
 1. **예약 캘린더 월간 뷰** — 현재 "준비중" 비활성화 처리됨, 실제 구현 필요
-2. **대시보드 실데이터 연동** — 차트를 Firestore 예약 데이터로 집계
-3. **권한 관리 편집 UI** — 역할별 권한 변경 기능
+2. **권한 관리 편집 UI** — 역할별 권한 변경 기능
+3. **고객 삭제 (소프트)** — 현재 "소프트 삭제 정책 결정 필요"로 보류 중
