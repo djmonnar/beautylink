@@ -6,10 +6,10 @@ export type ReservationSource = "naver" | "phone" | "visit" | "kakao";
 export type ReservationStatus = "confirmed" | "pending" | "cancelled" | "noShow" | "completed";
 export type CustomerGrade = "VIP" | "신규" | "재방문" | "휴면";
 export type DesignerStatus = "active" | "off" | "inactive";
-export type MessageType = "reservation_confirm" | "reminder" | "cancel" | "noshow";
+export type MessageType = "reservation_confirm" | "reminder" | "cancel" | "noshow" | "revisit";
 export type PermissionRole = "원장" | "매니저" | "디자이너";
 export type UserRole = "owner" | "manager" | "designer";
-export type MessageChannel = "SMS" | "카카오";
+export type MessageChannel = "SMS" | "알림톡" | "카카오" | "LMS";
 
 // ============================================================
 // Domain Interfaces
@@ -134,19 +134,26 @@ export interface MessageTemplate {
   content: string;
   channel: MessageChannel;
   active: boolean;
+  createdBy?: string;
+  updatedBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface MessageLog {
   id: string;
+  templateId?: string;
+  templateTitle?: string;
   type: MessageType;
   customerId?: string;
   customerName: string;
   phoneMasked: string;
+  reservationId?: string;
   content: string;
   channel: MessageChannel;
-  status: "sent" | "failed" | "pending";
+  status: "mock_sent" | "sent" | "failed" | "pending";
+  errorMessage?: string;
+  createdBy?: string;
   createdAt?: string;
 }
 
