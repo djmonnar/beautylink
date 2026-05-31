@@ -9,11 +9,82 @@
 
 - **날짜**: 2026-05-31
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 13 — 직원/권한 관리 편집 UI
+- **작업 단계**: Phase 14 — 예약 캘린더 월간 뷰 구현
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 14 — 예약 캘린더 월간 뷰 구현
+
+#### 주요 변경 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/calendar/page.tsx` | 전면 재작성 — 월간 뷰 추가 (기존 일/주 뷰 유지) |
+
+#### `src/app/calendar/page.tsx` 주요 변경
+
+**신규 헬퍼 함수**
+- `dateToStr(d)` — `new Date(y,m,d)` 로컬 기준 `YYYY-MM-DD` 변환 (UTC toISOString 대신, KST 안전)
+- `buildMonthGrid(year, month)` — 6×7=42셀 배열, 월요일 시작 오프셋 계산 (`firstDow===0 ? -6 : 1-firstDow`)
+- `CalendarCell` 인터페이스 — `{ dateStr, isCurrentMonth, day, dow }`
+- `formatMonthDisplay(dateStr)` — "2026년 5월" 형식
+- `formatMonthDayHeader(dateStr)` — "5.14 (목)" 형식
+
+**신규 상태 / useMemo**
+- `monthReservations: Reservation[]` — 월간 예약 배열
+- `monthLoading: boolean` — 월간 데이터 로딩 상태
+- `selectedMonthDate: string | null` — 날짜 클릭 선택 상태
+- `monthStats` useMemo — `{ total, completed, completedRevenue, noShow, cancelled, remaining }`
+- `calendarGrid` useMemo — `buildMonthGrid(monthYear, monthMonth)` 결과
+- `monthResByDate` useMemo — `Record<string, Reservation[]>` (날짜별 예약 맵)
+- `selectedDateRes` useMemo — 선택된 날짜의 예약 배열
+
+**loadMonthReservations (useCallback)**
+- `getReservationsByDateRange(salonId, firstDay, lastDay)` 재사용
+- 월 첫날: `new Date(y, m, 1)` → `dateToStr()`
+- 월 마지막날: `new Date(y, m+1, 0)` → `dateToStr()`
+- `view === "월"` 전환 또는 월 이동 시 자동 호출
+
+**뷰 전환 변경**
+- "월" 버튼 — `<span>준비중</span>` 제거 → 정상 클릭 가능
+- 이전/다음 날 이동: `view === "월"` 시 `setDate(1)` 후 `setMonth(±1)` (월 이동)
+- `navigatePrev/Next` 분기 추가 (일/주/월 각각)
+
+**월간 뷰 UI (데스크탑)**
+- 요일 헤더 7칸 (월~일)
+- 6행×7열 달력 그리드
+  - 이번 달 셀: 날짜숫자(오늘=파란 원) + 예약 pill 최대 3개 + "+N 더보기" 배지
+  - 다른 달 셀: 회색 표시, 예약 pill 없음
+  - 선택된 날짜: 인디고 테두리 강조
+  - 예약 pill: 상태별 색상 (확정=인디고, 완료=초록, 노쇼=빨강, 취소=회색, 대기=노랑)
+- 우측 사이드바: 월간 통계 (총 예약/완료/노쇼/취소/매출) + 선택 날짜 예약 상세 패널
+
+**월간 뷰 UI (모바일)**
+- 통계 스트립 (2행×4칸: 총예약/완료/노쇼취소/매출)
+- 7열 미니 캘린더 (날짜 + 예약 건수 점)
+- 선택된 날짜 예약 리스트 (카드 형태)
+
+**기존 뷰 유지**
+- 일별 그리드 뷰: 완전 유지
+- 주간 7컬럼 뷰: 완전 유지
+- `selectedReservation` 검색: `reservations` + `monthReservations` 양쪽 탐색
+
+#### Firestore 쿼리 전략
+- `getReservationsByDateRange(salonId, firstDay, lastDay)` — 이미 Phase 10/대시보드에서 검증된 함수 재사용
+- `where("date",">=",firstDay).where("date","<=",lastDay)` — 동일 필드 range, 복합 인덱스 불필요
+- 월간 데이터: 실시간 `onSnapshot` 아님, 일회성 `getDocs` (개요 조회 목적)
+
+#### 보안 준수
+- 실제 네이버예약 API 호출 없음
+- 문자/알림톡 실발송 없음
+- 기존 예약 데이터 삭제/deleteDoc 없음
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+---
 
 ### Phase 13 — 직원/권한 관리 편집 UI
 
@@ -444,7 +515,7 @@ allow delete: if false;
 | 실제 네이버예약 API | 보류 | 공식 제휴 후 연동 예정 |
 | 디자이너 관리 고도화 | ✅ 완료 | 휴무일 달력 편집 UI 완성 (Phase 7) |
 | 예약 캘린더 주간 뷰 | ✅ 완료 | 데스크탑 7컬럼 + 모바일 요일칩 (Phase 8) |
-| 예약 캘린더 월간 뷰 | 🔲 미구현 | 버튼 "준비중" 비활성화 처리됨 |
+| 예약 캘린더 월간 뷰 | ✅ 완료 | 6×7 그리드, 날짜 클릭 상세, 월간 통계 (Phase 14) |
 | calendar salonId null safety | ✅ 완료 | `?? null` + 가드 UI (안정화 패치) |
 | 설정 페이지 | ✅ 완료 | 내 정보/매장 정보/비밀번호 탭 편집 UI (Phase 9) |
 | 보안/권한 관리 페이지 | ✅ 완료 | Phase 6에서 Firestore 연동 완료 |
@@ -485,7 +556,17 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트한 항목
 
-- ✅ `npm run build` 통과 (Phase 11 포함, 16개 페이지 정상)
+- ✅ `npm run build` 통과 (Phase 14 포함, 16개 페이지 정상)
+- ✅ Phase 14 TypeScript strict 오류 없음
+- ✅ `buildMonthGrid(year, month)` 6×7 그리드 로직 검토 (월요일 시작 오프셋 처리)
+- ✅ `dateToStr()` — `new Date(y,m,d)` 로컬 기준 (UTC offset 회피, KST 안전)
+- ✅ `loadMonthReservations` — `getReservationsByDateRange` 재사용, 복합 인덱스 불필요 확인
+- ✅ `monthResByDate` useMemo — `Record<string, Reservation[]>` 날짜 키 맵 구조
+- ✅ `monthStats` useMemo — completed/noShow/cancelled/revenue 집계 로직
+- ✅ `navigatePrev/Next` — 월간 뷰 시 `setDate(1)` 후 `setMonth(±1)` 패턴
+- ✅ 기존 일별/주간 뷰 완전 유지 (모바일 `view === "일"` 명시 분기)
+- ✅ 월간 뷰 "월" 버튼 — `준비중` span 제거, 정상 클릭 가능
+- ✅ `selectedReservation` — `reservations` + `monthReservations` 양쪽 검색
 - ✅ Phase 11 TypeScript strict 오류 없음
 - ✅ `applyVars` 변수 치환 로직 코드 검토
 - ✅ `getNoShowReservations` — 단일 `where("status","==","noShow")` 복합 인덱스 불필요 확인
@@ -519,6 +600,12 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 
 ## 테스트 못 한 항목
 
+- ❌ 월간 뷰 실제 Firestore 데이터로 달력 렌더링 확인 (예약 pill 표시)
+- ❌ 월간 뷰 날짜 클릭 → 우측 상세 패널 예약 목록 표시 확인
+- ❌ 월간 뷰 이전/다음 달 이동 + 데이터 재로드 확인
+- ❌ 월간 뷰 월간 통계(완료매출 포함) 정확도 확인
+- ❌ 월간 뷰 모바일 미니 캘린더 + 선택 날짜 리스트 확인
+- ❌ 일/주/월 뷰 전환 전후 상태 초기화 정상 동작 확인
 - ❌ 메시지 템플릿 Firestore 실제 저장/조회 확인
 - ❌ 기본 템플릿 5개 시드 — 실제 Firestore에 중복 없이 저장되는지 확인
 - ❌ 발송 이력 Firestore `messageLogs` 컬렉션 저장 확인
@@ -555,7 +642,7 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 ## 다음 추천 작업
 
 우선순위 순:
-1. **예약 캘린더 월간 뷰** — 현재 "준비중" 비활성화 처리됨, 실제 구현 필요
-2. **권한 관리 편집 UI** — 역할별 권한 변경 기능
-3. **고객 삭제 (소프트)** — 현재 "소프트 삭제 정책 결정 필요"로 보류 중
+1. **고객 삭제 (소프트)** — 현재 "소프트 삭제 정책 결정 필요"로 보류 중 (`isDeleted=true` 또는 `status="inactive"`)
+2. **예약 상태 변경 accessLog 보완** — 완료/노쇼/취소 처리 시 accessLog 미기록 여부 확인
+3. **Vercel 재배포** — Phase 13~14 변경사항 반영
 4. **문자 실발송 연동** — SENS API / 카카오 알림톡 (외부 승인 후)
