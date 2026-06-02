@@ -260,8 +260,8 @@
 - [ ] 주말 시작/종료 시간 picker 표시 및 수정
 - [ ] 정기 휴무일 토글 버튼 (일~토, 선택 시 인디고 강조)
 - [ ] "저장" 성공 → 초록 배너 표시 + Firestore 반영
-- [ ] owner/manager: 편집 가능
-- [ ] designer: 수정 버튼 접근 불가 (읽기만)
+- [ ] owner만: 편집 가능 (Firestore rules `isOwnerOf` — manager도 읽기 전용)
+- [ ] manager/designer: 수정 버튼 없음 + 읽기 전용 안내 표시
 - [ ] accessLog: `salon_info_updated` 기록 확인
 
 ### 공통 UX
