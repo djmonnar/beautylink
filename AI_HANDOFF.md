@@ -7,13 +7,76 @@
 
 ## 마지막 업데이트
 
-- **날짜**: 2026-05-31
+- **날짜**: 2026-06-02
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 14 — 예약 캘린더 월간 뷰 구현
+- **작업 단계**: Phase 15 — MVP 안정화 QA
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 15 — MVP 안정화 QA
+
+#### 주요 변경 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `docs/MVP_QA_SCENARIOS.md` | **신규** — 전체 시나리오 체크리스트 (A~N + 모바일) |
+| `docs/KNOWN_ISSUES.md` | 전면 최신화 — 4분류, 코드 스캔 결과 포함 |
+| `docs/QA_CHECKLIST.md` | 설정 페이지 owner/manager 권한 설명 오류 수정 |
+| `AI_HANDOFF.md` | Phase 15 섹션 추가 |
+
+#### Firebase 직접 수정 (MCP)
+
+| 항목 | 내용 |
+|------|------|
+| `beautylink@gmail.com` Firestore 문서 생성 | `users/XNDnPs0acTPCzfVYuWBl4oScn7V2` — role=manager, salonId=salon1 |
+| 데모 예약 날짜 현재화 | r1~r6: 2026-05-31, r7~r8: 2026-06-01, r9~r10: 2026-05-29 |
+
+#### 코드 위험 패턴 스캔 결과
+
+| 패턴 | 결과 |
+|------|------|
+| `?? "salon1"` 기본값 | ✅ 없음 |
+| `deleteDoc` 실사용 | ✅ 주석에만 (금지 언급) |
+| `phoneRaw` UI 노출 | ✅ customers/private 전용, 안전 |
+| API Key / Secret 하드코딩 | ✅ 없음 |
+| MOCK_ 데이터 운영 노출 | ✅ `!db` 조건 하에서만 |
+| `noshow` 오타 | ✅ 의도적 구분 (ReservationStatus=`noShow`, MessageType=`noshow`) |
+| 복합 인덱스 위험 쿼리 | ✅ `orderBy+where` 조합 없음 |
+| 무한 로딩 | ✅ 모든 async에 try/catch + setLoading(false) |
+
+#### 확인된 접근 권한 매트릭스
+
+| 페이지 | owner | manager | designer | 비고 |
+|--------|-------|---------|---------|------|
+| `/dashboard` | 읽기+통계 | 읽기+통계 | 읽기+통계 | 전체 공개 |
+| `/calendar` | 전체 | 전체 | 본인 예약만 | isOM 체크 |
+| `/reservations/new` | 전체 | 전체 | 본인 designerId 강제 | |
+| `/customers` | 전체 (phoneRaw 포함) | 전체 (phoneRaw 포함) | 읽기 (phoneMasked만) | |
+| `/designers` | 전체 | 등록/수정 | 읽기 | `canManageDesigners` |
+| `/services` | 전체 | 등록/수정 | 읽기 | isOM 체크 |
+| `/messages` | 전체 | 전체 | 읽기 전용 | isOM 체크 |
+| `/integrations/naver` | 전체 (상태 변경 포함) | 매핑 수정 | 읽기 | isOwner / isOM |
+| `/security` | 전체 (직원 수정 포함) | 접근 로그/직원 목록 읽기 | 접근 거부 | isOM 체크 |
+| `/settings` | 전체 (매장 정보 수정) | 내 정보만 수정 | 내 정보만 수정 | **매장 정보: owner only** |
+| `/qa` | 전체 | 접근 거부 | 접근 거부 | `role !== "owner"` 가드 |
+| `/setup` | 전체 | 접근 거부 | 접근 거부 | `role !== "owner"` 가드 |
+
+> ⚠️ 주의: `/settings` 매장 정보 탭은 **owner만** 수정 가능. Firestore rules `isOwnerOf(salonId)` 와 일치. 매니저는 읽기 전용.
+
+#### 발견된 이슈 요약
+
+| 분류 | 내용 | 심각도 |
+|------|------|--------|
+| 문서 오류 | QA_CHECKLIST 설정 페이지 "owner/manager 편집 가능" → "owner만" 수정 | 낮음 (수정 완료) |
+| 미확인 | `beautylink@gmail.com` manager 역할로 앱 실동작 미확인 | 낮음 (Firestore 문서 생성 완료) |
+| 외부 의존 | SMS/알림톡 실발송, 네이버예약 API | 보류 |
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+---
 
 ### Phase 14 — 예약 캘린더 월간 뷰 구현
 
@@ -642,7 +705,7 @@ Firebase 설정 없이도 앱이 동작함 (`.env.local` 미설정 상태)
 ## 다음 추천 작업
 
 우선순위 순:
-1. **고객 삭제 (소프트)** — 현재 "소프트 삭제 정책 결정 필요"로 보류 중 (`isDeleted=true` 또는 `status="inactive"`)
-2. **예약 상태 변경 accessLog 보완** — 완료/노쇼/취소 처리 시 accessLog 미기록 여부 확인
-3. **Vercel 재배포** — Phase 13~14 변경사항 반영
+1. **Vercel 재배포** — Phase 13~15 변경사항 반영 후 실 브라우저 테스트
+2. **실제 로그인 시나리오 수행** — `docs/MVP_QA_SCENARIOS.md` 기준으로 직접 체크
+3. **고객 삭제 (소프트)** — `isDeleted=true` 정책 결정 및 구현
 4. **문자 실발송 연동** — SENS API / 카카오 알림톡 (외부 승인 후)
