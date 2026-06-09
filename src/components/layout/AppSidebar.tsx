@@ -17,6 +17,7 @@ import {
   X,
   LogOut,
   FlaskConical,
+  BookOpen,
 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
@@ -166,6 +167,14 @@ export default function AppSidebar({ open, onClose }: Props) {
               className="flex-1 text-center text-xs text-white/40 hover:text-white/70 transition-colors py-1.5"
             >
               ← 랜딩페이지
+            </Link>
+            <Link
+              href="/?guide=true#demo-accounts"
+              className="flex items-center gap-1 text-xs text-white/40 hover:text-amber-300 transition-colors py-1.5 px-2"
+              title="데모 가이드"
+            >
+              <BookOpen size={13} />
+              가이드
             </Link>
             {firebaseReady && user && (
               <button
