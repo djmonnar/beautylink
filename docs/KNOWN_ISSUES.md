@@ -1,6 +1,6 @@
 # 알려진 이슈 및 후순위 항목
 
-> 마지막 업데이트: 2026-06-02 (Phase 15 — MVP 안정화 QA)
+> 마지막 업데이트: 2026-06-02 (Phase 15 후속 — 문서 정합성 점검)
 > 즉각 수정이 필요하지 않은 이슈, 외부 의존 이슈, 나중에 개선할 사항 목록
 
 ---
@@ -25,10 +25,8 @@
 - **개선 여지**: 스텝 UI 또는 아코디언 적용 가능
 - **우선순위**: 낮음
 
-### [UI-3] 대시보드 신규 고객 카운트 — registeredAt 필드 의존
-- **현상**: 신규 고객 수 = `registeredAt.startsWith(todayStr)` 로직. Firestore에 저장 시 `createdAt`이 아닌 `registeredAt` 필드가 있어야 동작.
-- **확인 필요**: `/setup`이나 고객 등록 시 `registeredAt` 필드 저장 여부 확인
-- **우선순위**: 중간
+### ~~[UI-3] 대시보드 신규 고객 카운트 — registeredAt 필드 의존~~ → **해결됨**
+- → 해결된 이슈 섹션 참고
 
 ### [UI-4] 캘린더 월간 뷰 — 오늘 날짜 기본값 (데모 데이터와 1년 차이)
 - **현상**: Firestore 데모 예약 데이터를 2026-05-31 기준으로 업데이트 완료. 새로 추가되는 실데이터는 실시간으로 반영됨.
@@ -40,10 +38,8 @@
 - **개선 방향**: `isDeleted=true` 플래그 + 목록에서 필터 처리
 - **우선순위**: 낮음 (소프트 삭제 정책 합의 필요)
 
-### [LOGIC-2] 예약 상태 변경 시 accessLog 미기록 가능성
-- **현상**: 예약 완료/노쇼/취소 처리 시 `changeReservationStatus()`가 Firestore를 직접 업데이트하지만 accessLog 기록 로직이 포함되어 있는지 불명확
-- **확인 필요**: `src/services/reservations.ts`의 `changeReservationStatus` 함수 내 logReservationAccess 포함 여부
-- **우선순위**: 중간
+### ~~[LOGIC-2] 예약 상태 변경 시 accessLog 미기록 가능성~~ → **해결됨**
+- → 해결된 이슈 섹션 참고
 
 ### [LOGIC-3] 디자이너 페이지 — role 기반 UI 가드 명시적 isOM 미적용
 - **현상**: `/designers` 페이지가 Firestore rules에 의해 디자이너의 쓰기를 차단하나, UI에서 명시적 `isOM` 체크로 편집 버튼을 숨기는 처리가 불완전할 수 있음
@@ -124,3 +120,5 @@
 | 직원/권한 관리 편집 UI 없음 | 2026-05-31 | Phase 13: /security 직원 관리 탭 추가 |
 | beautylink@gmail.com Firestore 문서 없음 | 2026-06-02 | Firebase MCP로 직접 users 문서 생성 |
 | 예약 데모 데이터 날짜 2025년 | 2026-06-02 | Firebase MCP로 직접 날짜 현재화 (2026-05~06) |
+| [LOGIC-2] accessLog 미기록 가능성 | 2026-06-09 | 코드 검증 완료: `changeReservationStatus` lines 178-241에서 `options.updatedBy` 제공 시 `reservation_completed/no_show/cancelled` accessLog 정상 기록 확인 |
+| [UI-3] registeredAt 타임존 버그 | 2026-06-09 | `todayStr()` (reservations/new) + `registeredAt` 기본값 (customers) 모두 UTC `toISOString()` → KST 로컬 시간 계산으로 수정. KST 자정~오전9시 구간 날짜 불일치 해결 |

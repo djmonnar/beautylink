@@ -160,8 +160,11 @@ function CustomerFormModal({
       visitHistory: customer?.visitHistory ?? [],
       totalVisits: customer?.totalVisits ?? 0,
       totalSpent: customer?.totalSpent ?? 0,
-      registeredAt:
-        customer?.registeredAt ?? new Date().toISOString().split("T")[0],
+      registeredAt: (() => {
+          if (customer?.registeredAt) return customer.registeredAt;
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        })(),
       lastVisitDate: customer?.lastVisitDate ?? "",
       nextVisitDate: form.nextVisitDate || undefined,
     };

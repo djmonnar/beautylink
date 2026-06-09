@@ -7,13 +7,55 @@
 
 ## 마지막 업데이트
 
-- **날짜**: 2026-06-02
+- **날짜**: 2026-06-09
 - **작업자**: Claude Code (Sonnet 4.6)
-- **작업 단계**: Phase 15 — MVP 안정화 QA
+- **작업 단계**: Phase 15 후속 — 문서 정합성 점검 + 타임존 버그 수정
 
 ---
 
 ## 최근 작업 요약
+
+### Phase 15 후속 — 문서 정합성 점검 + 타임존 버그 수정
+
+#### 검증 결과
+
+| 항목 | 결과 |
+|------|------|
+| [LOGIC-2] `changeReservationStatus` accessLog 기록 | ✅ 확인됨 — `options.updatedBy` 제공 시 `reservation_completed/no_show/cancelled` 로그 기록 (lines 178-241 in `src/services/reservations.ts`) |
+| [UI-3] `registeredAt` 필드 저장 여부 | ✅ 항상 저장됨 — `customers/page.tsx` 신규 등록 폼 + `seedData.ts` MOCK_CUSTOMERS 모두 포함 확인 |
+
+#### 발견 및 수정된 버그: 타임존 불일치 (KST 자정~오전9시 구간)
+
+**문제**: 대시보드 신규 고객 카운트(`localDateStr()` = KST 로컬 시간)와 고객 등록 시 저장되는 `registeredAt`(`toISOString().split("T")[0]` = UTC)이 KST 기준 자정~오전9시 사이에 날짜가 다르게 계산되어 신규 고객으로 카운트 안 되는 버그.
+
+**수정 파일**
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/reservations/new/page.tsx` | `todayStr()` — `toISOString().split("T")[0]` → 로컬 시간 계산으로 수정 |
+| `src/app/customers/page.tsx` | `registeredAt` 기본값 — `toISOString().split("T")[0]` → 로컬 시간 IIFE로 수정 |
+
+**수정 코드 패턴** (두 파일 공통):
+```ts
+// 변경 전 (UTC 기반, KST 자정~오전9시 날짜 불일치)
+new Date().toISOString().split("T")[0]
+
+// 변경 후 (로컬 시간 기반, KST 안전)
+const d = new Date();
+`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+```
+
+#### 문서 업데이트
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `docs/KNOWN_ISSUES.md` | [LOGIC-2] 해결됨 이동, [UI-3] 해결됨 이동 + 타임존 버그 해결 항목 추가 |
+| `AI_HANDOFF.md` | Phase 15 후속 섹션 추가 |
+
+#### 빌드 상태
+- `npm run build` 통과 (TypeScript strict, 16개 페이지 정상)
+
+---
 
 ### Phase 15 — MVP 안정화 QA
 
