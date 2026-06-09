@@ -1,6 +1,6 @@
 # 기능별 완료 상태표
 
-> 마지막 업데이트: 2026-05-31 (Phase 14 — 예약 캘린더 월간 뷰 구현 완료)
+> 마지막 업데이트: 2026-06-09 (Phase 16 — 소개/영업용 패키지 구축)
 
 ---
 
@@ -218,6 +218,23 @@
 | 역할별 접근 제어 | ✅ | `settings/page.tsx` | 매장 정보: owner/manager만 수정 가능 |
 | 모바일 탭 UI | ✅ | `settings/page.tsx` | 가로 스크롤 탭 칩 |
 | 데스크탑 사이드바 UI | ✅ | `settings/page.tsx` | w-44 좌측 탭 메뉴 |
+
+---
+
+## 소개 / 영업용 패키지
+
+| 기능 | 상태 | 관련 파일 | 비고 |
+|------|------|----------|------|
+| 랜딩페이지 — Hero 섹션 | ✅ | `src/app/page.tsx` | "미용실 예약·고객·디자이너 관리를 한 화면에서" (Phase 16) |
+| 랜딩페이지 — 문제 제기 섹션 | ✅ | `src/app/page.tsx` | 6가지 불편함 카드 (Phase 16) |
+| 랜딩페이지 — 핵심 기능 섹션 | ✅ | `src/app/page.tsx` | 4대 기능 상세 + 6개 추가 기능 그리드 = 총 9기능 (Phase 16) |
+| 랜딩페이지 — 네이버 연동 준비 섹션 | ✅ | `src/app/page.tsx` | API 미호출 명시 (Phase 16) |
+| 랜딩페이지 — 데모 계정 안내 섹션 | ✅ | `src/app/page.tsx` | 원장/매니저/디자이너(준비중), 비밀번호 별도 전달 (Phase 16) |
+| 랜딩페이지 — 하단 CTA | ✅ | `src/app/page.tsx` | "뷰티샵 운영을 더 쉽게" + /login 유도 (Phase 16) |
+| 사이드바 데모 가이드 링크 | ✅ | `src/components/layout/AppSidebar.tsx` | 하단 "가이드" 버튼 → 랜딩 #demo-accounts (Phase 16) |
+| 데모 시나리오 문서 | ✅ | `docs/DEMO_SCRIPT.md` | 3분/10분 + 원장님/네이버 검토자 + 모바일 시나리오 (Phase 16) |
+| 영업용 One Pager | ✅ | `docs/SALES_ONE_PAGER.md` | 기능 요약·차별점·로드맵 (Phase 16) |
+| 가격 정책 초안 | ✅ | `docs/PRICING_DRAFT.md` | Free/Starter/Pro 구조 + 비교표 (Phase 16) |
 
 ---
 
