@@ -381,15 +381,33 @@ export default function LandingPage() {
               <Clock size={14} className="text-amber-600" />
               <span className="text-sm text-amber-700 font-medium">네이버예약 API 제휴 검토 후 공식 연동 예정</span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">네이버예약 연동 준비</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">네이버예약 연동을 고려한 구조</h2>
             <p className="text-gray-600">
-              공식 API 승인 이후 즉시 연동 활성화가 가능하도록 미리 설정해 두세요.
-              <br className="hidden sm:block" />
-              현재 내부 디자이너·시술 메뉴 매핑 준비가 완료되어 있습니다.
+              뷰티링크는 네이버예약 공식 API 제휴 승인 전 단계에서도<br className="hidden sm:block" />
+              내부 디자이너·시술 메뉴 매핑을 미리 준비할 수 있도록 설계되었습니다.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {/* 4가지 준비 카드 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[
+              { icon: Link2, color: "bg-blue-100 text-blue-600", title: "디자이너 매핑", desc: "내부 디자이너 이름 ↔ 네이버예약 디자이너명 1:1 연결 사전 설정" },
+              { icon: MenuIcon, color: "bg-purple-100 text-purple-600", title: "시술 메뉴 매핑", desc: "내부 시술 메뉴 ↔ 네이버예약 메뉴명 1:1 연결, 카테고리별 정리" },
+              { icon: CalendarDays, color: "bg-green-100 text-green-600", title: "예약 데이터 통합 준비", desc: "네이버/전화/방문 예약 경로를 구분해 하나의 캘린더에 통합 준비" },
+              { icon: CheckCircle, color: "bg-amber-100 text-amber-600", title: "공식 제휴 후 API 연동 확장", desc: "제휴 승인 즉시 추가 설정 없이 실시간 연동 활성화 가능한 구조" },
+            ].map((card) => (
+              <div key={card.title} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${card.color}`}>
+                  <card.icon size={20} />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-sm mb-2">{card.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 5단계 프로세스 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
             {[
               { num: "01", title: "상점 ID 설정", desc: "매장 기본 정보 입력" },
               { num: "02", title: "디자이너 매핑", desc: "내부 ↔ 네이버 연결" },
@@ -397,8 +415,8 @@ export default function LandingPage() {
               { num: "04", title: "연동 준비율 확인", desc: "항목별 체크리스트" },
               { num: "05", title: "API 승인 후 활성화", desc: "승인 즉시 자동 연동" },
             ].map((step) => (
-              <div key={step.num} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 text-center">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-3">
+              <div key={step.num} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-2">
                   {step.num}
                 </div>
                 <h3 className="font-semibold text-gray-900 text-sm mb-1">{step.title}</h3>
@@ -407,10 +425,10 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-center">
             <p className="text-sm text-amber-800">
-              <strong>안내:</strong> 현재 네이버예약 API 공식 제휴 검토 중입니다.
-              실제 API 호출은 하지 않으며, 승인 완료 후 별도 설정 없이 자동으로 연동이 활성화됩니다.
+              <strong>현재 버전은 실제 네이버예약 API를 호출하지 않습니다.</strong><br />
+              네이버 공식 제휴 승인 후 별도 설정 없이 연동이 활성화됩니다.
             </p>
           </div>
         </div>

@@ -954,6 +954,25 @@ export default function NaverIntegrationPage() {
               </p>
             </div>
           )}
+
+          {/* ── 제휴 준비 안내 ─────────────────────────────────────────── */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div className="flex items-start gap-3">
+              <Info size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900 mb-1">
+                  네이버예약 API 제휴 준비 화면
+                </p>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  이 화면은 네이버예약 공식 API 제휴 또는 연동 검토를 위한 사전 매핑 화면입니다.
+                  <strong> 실제 API 호출은 수행하지 않으며</strong>, 제휴 승인 후 연동 범위에 따라 확장됩니다.
+                </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  현재 저장된 디자이너·시술 매핑 정보는 제휴 승인 즉시 자동으로 연동에 활용됩니다.
+                </p>
+              </div>
+            </div>
+          </div>
         </>
       )}
     </AdminLayout>
